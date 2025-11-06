@@ -3,7 +3,8 @@ import streamlit as st
 # --- 1. CONFIGURATION AND STYLING (MIMICKING APPLE/TAILWIND) ---
 
 # The core CSS block to inject. This sets the dark mode theme, 
-# uses the Inter font, and provides custom classes for all components.
+# uses the Inter font (a common choice for modern, clean UI), 
+# and provides custom classes for the Apple-like components.
 APPLE_TAILWIND_CSS = """
 <style>
     /* 1. Global Setup (Dark Mode and Font) */
@@ -39,6 +40,7 @@ APPLE_TAILWIND_CSS = """
         font-weight: 400;
         text-align: center;
         color: #888888;
+        /* max-width: 600px; <-- REMOVED this line to allow full width extension */
         margin: 0 auto 3rem auto;
     }
     
@@ -49,45 +51,79 @@ APPLE_TAILWIND_CSS = """
         margin-bottom: 2rem;
         text-align: center;
     }
+
+    /* 3. Card/Navigation Styling (Minimalist) - Kept for future use if needed */
+    .apple-card {
+        background-color: #1a1a1a;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+    }
     
-    /* 3. NEW Horizontal Navigation Bar */
+    .apple-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* 4. Default Button Styling (Pill shape) - Now used for nav */
+    div.stButton > button {
+        background-color: #1a1a1a; 
+        color: #FFFFFF;
+        border: 1px solid #333333;
+        border-radius: 9999px; /* Pill shape */
+        padding: 10px 20px;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: background-color 0.2s, border-color 0.2s;
+        cursor: pointer;
+    }
+
+    div.stButton > button:hover {
+        background-color: #333333;
+        border-color: #555555;
+    }
+    
+    /* 5. NEW Horizontal Navigation Bar */
     .apple-nav-container {
         width: 100%;
         border-bottom: 1px solid #2a2a2a; /* Subtle separator */
         margin-bottom: 3rem;
-        padding: 0.5rem 0;
+        padding: 0.5rem 0; /* Updated padding */
         background-color: #101010; /* Dark "strip" background */
-        border-radius: 12px;  /* <-- RE-ADDED as requested */
+        border-radius: 12px; /* Rounded corners */
     }
     
-    /* Style for ALL buttons within the nav */
+    /* Style for the buttons within the nav */
     .apple-nav-container [data-testid="stButton"] > button {
         background: none !important;
         border: none !important;
         color: #888888 !important; /* Inactive link color */
         padding: 5px 10px !important;
-        font-size: 0.95rem;
+        font-size: 0.95rem; /* Slightly smaller */
         font-weight: 500;
         text-align: center;
         width: 100%;
-        transition: color 0.2s;
     }
 
-    /* Hover state for INACTIVE buttons */
-    .apple-nav-container [data-testid="stButton"] > button:not(:disabled):hover {
+    .apple-nav-container [data-testid="stButton"] > button:hover {
         color: #FFFFFF !important; /* White on hover */
         background: none !important;
         border: none !important;
     }
     
-    /* Style for the *disabled* (active) button */
+    /* Style for the *active* link (which is just text) */
+    /* REMOVED .apple-nav-active-link rule */
+
+    /* NEW: Style for the *disabled* (active) button */
     .apple-nav-container [data-testid="stButton"] > button:disabled {
         font-weight: 600; /* Bolder */
-        color: #FFFFFF !important; /* Active link color (White) */
+        color: #FFFFFF !important; /* Active link color */
         background: none !important;
         border: none !important;
         cursor: default !important;
-        opacity: 1 !important; /* <-- ADDED to ensure visibility */
     }
 
 
@@ -127,20 +163,44 @@ def create_main_navbar():
     st.markdown('<div class="apple-nav-container">', unsafe_allow_html=True)
     cols = st.columns(6)
     
-    page_keys = list(PAGE_NAMES.keys())
-    page_values = list(PAGE_NAMES.values())
+    page_keys = list(PAGE_NAMES.keys()) # ["Home", "Vision Pro", ...]
+    page_values = list(PAGE_NAMES.values()) # ["main_page", "page_a", ...]
     
-    # Iterate to create all 6 buttons
-    for i in range(6):
-        with cols[i]:
-            is_active = (st.session_state.current_page == page_values[i])
-            
-            # We create a button for every link.
-            # The active link is just a *disabled* button.
-            # This guarantees perfect alignment.
-            if st.button(page_keys[i], key=f"nav_{page_values[i]}", disabled=is_active):
-                navigate_to(page_values[i])
-                st.rerun() # Use rerun for instant page switch
+    with cols[0]:
+        is_active = st.session_state.current_page == page_values[0]
+        if st.button(page_keys[0], key="nav_home", disabled=is_active):
+            navigate_to(page_values[0])
+            st.rerun() # Use rerun for instant page switch
+    
+    with cols[1]:
+        is_active = st.session_state.current_page == page_values[1]
+        if st.button(page_keys[1], key="nav_vision", disabled=is_active):
+            navigate_to(page_values[1])
+            st.rerun()
+                
+    with cols[2]:
+        is_active = st.session_state.current_page == page_values[2]
+        if st.button(page_keys[2], key="nav_mac", disabled=is_active):
+            navigate_to(page_values[2])
+            st.rerun()
+
+    with cols[3]:
+        is_active = st.session_state.current_page == page_values[3]
+        if st.button(page_keys[3], key="nav_iphone", disabled=is_active):
+            navigate_to(page_values[3])
+            st.rerun()
+                
+    with cols[4]:
+        is_active = st.session_state.current_page == page_values[4]
+        if st.button(page_keys[4], key="nav_watch", disabled=is_active):
+            navigate_to(page_values[4])
+            st.rerun()
+                
+    with cols[5]:
+        is_active = st.session_state.current_page == page_values[5]
+        if st.button(page_keys[5], key="nav_airpods", disabled=is_active):
+            navigate_to(page_values[5])
+            st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -148,18 +208,20 @@ def create_main_navbar():
 
 def main_page():
     """The main landing page with the hero section."""
-    create_main_navbar()
+    create_main_navbar() # <-- ADDED
     st.markdown('<div class="apple-hero-title">Introducing a New Era of Innovation.</div>', unsafe_allow_html=True)
     st.markdown(
         '<p class="apple-hero-subtitle">Experience seamless integration, revolutionary performance, and timeless design across all our platforms.</p>',
         unsafe_allow_html=True
     )
+    # --- All card navigation removed ---
 
 
 def page_a():
     """Vision Pro Page"""
-    create_main_navbar()
+    create_main_navbar() # <-- ADDED
     st.markdown('<h1 class="apple-page-title">Apple Vision Pro</h1>', unsafe_allow_html=True)
+    # st.image(...) <-- REMOVED
     st.markdown("## Spatial Computing is Here.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -176,8 +238,9 @@ def page_a():
 
 def page_b():
     """MacBook Page"""
-    create_main_navbar()
+    create_main_navbar() # <-- ADDED
     st.markdown('<h1 class="apple-page-title">MacBook Pro M4</h1>', unsafe_allow_html=True)
+    # st.image(...) <-- REMOVED
     st.markdown("## Power. Efficiency. Pro.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -194,8 +257,9 @@ def page_b():
 
 def page_c():
     """iPhone 16 Page"""
-    create_main_navbar()
+    create_main_navbar() # <-- ADDED
     st.markdown('<h1 class="apple-page-title">iPhone 16 Pro</h1>', unsafe_allow_html=True)
+    # st.image(...) <-- REMOVED
     st.markdown("## A Giant Leap for Photography.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -212,8 +276,9 @@ def page_c():
 
 def page_d():
     """Watch X Page"""
-    create_main_navbar()
+    create_main_navbar() # <-- ADDED
     st.markdown('<h1 class="apple-page-title">Apple Watch X</h1>', unsafe_allow_html=True)
+    # st.image(...) <-- REMOVED
     st.markdown("## Reimagined. Revolutionary.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -230,8 +295,9 @@ def page_d():
     
 def page_e():
     """AirPods Max Page"""
-    create_main_navbar()
+    create_main_navbar() # <-- ADDED
     st.markdown('<h1 class="apple-page-title">AirPods Max (Gen 2)</h1>', unsafe_allow_html=True)
+    # st.image(...) <-- REMOVED
     st.markdown("## Audio Purity. Redefined.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
