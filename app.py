@@ -40,7 +40,7 @@ APPLE_TAILWIND_CSS = """
         font-weight: 400;
         text-align: center;
         color: #888888;
-        max-width: 600px;
+        /* max-width: 600px; <-- REMOVED this line to allow full width extension */
         margin: 0 auto 3rem auto;
     }
     
@@ -163,24 +163,31 @@ def main_page():
             f'<div class="apple-card" onclick="document.getElementById(\'nav-vision-pro\').click()"><h3>{list(PAGE_NAMES.keys())[1]}</h3><p>Spatial computing. Now available.</p></div>',
             unsafe_allow_html=True
         )
+        # Wrap the functional button in a hidden div to ensure reliable navigation without visual clutter
+        st.markdown('<div style="display: none;">', unsafe_allow_html=True)
         if st.button("Navigate to Vision Pro", key="nav-vision-pro"):
             navigate_to(PAGE_NAMES["Vision Pro"])
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with cols[1]:
         st.markdown(
             f'<div class="apple-card" onclick="document.getElementById(\'nav-macbook\').click()"><h3>{list(PAGE_NAMES.keys())[2]}</h3><p>M4 Pro. Unleash Pro performance.</p></div>',
             unsafe_allow_html=True
         )
+        st.markdown('<div style="display: none;">', unsafe_allow_html=True)
         if st.button("Navigate to MacBook", key="nav-macbook"):
             navigate_to(PAGE_NAMES["MacBook"])
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with cols[2]:
         st.markdown(
             f'<div class="apple-card" onclick="document.getElementById(\'nav-iphone\').click()"><h3>{list(PAGE_NAMES.keys())[3]}</h3><p>Capture. Create. Connect. Better.</p></div>',
             unsafe_allow_html=True
         )
+        st.markdown('<div style="display: none;">', unsafe_allow_html=True)
         if st.button("Navigate to iPhone 16", key="nav-iphone"):
             navigate_to(PAGE_NAMES["iPhone 16"])
+        st.markdown('</div>', unsafe_allow_html=True)
             
     # Navigation Cards (Page D and E)
     cols = st.columns(3)
@@ -190,16 +197,20 @@ def main_page():
             f'<div class="apple-card" onclick="document.getElementById(\'nav-watch\').click()"><h3>{list(PAGE_NAMES.keys())[4]}</h3><p>The future of health is on your wrist.</p></div>',
             unsafe_allow_html=True
         )
+        st.markdown('<div style="display: none;">', unsafe_allow_html=True)
         if st.button("Navigate to Watch X", key="nav-watch"):
             navigate_to(PAGE_NAMES["Watch X"])
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with cols[1]:
         st.markdown(
             f'<div class="apple-card" onclick="document.getElementById(\'nav-airpods\').click()"><h3>{list(PAGE_NAMES.keys())[5]}</h3><p>Redesigned for pure, immersive audio.</p></div>',
             unsafe_allow_html=True
         )
+        st.markdown('<div style="display: none;">', unsafe_allow_html=True)
         if st.button("Navigate to AirPods Max", key="nav-airpods"):
             navigate_to(PAGE_NAMES["AirPods Max"])
+        st.markdown('</div>', unsafe_allow_html=True)
             
     # Empty column for alignment
     with cols[2]:
@@ -208,14 +219,7 @@ def main_page():
             unsafe_allow_html=True
         )
 
-    # Hide the Streamlit buttons used for navigation logic (they are triggered via JS click handlers on the custom cards)
-    st.markdown("""
-        <style>
-        [data-testid="stButton"] {
-            display: none;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    # REMOVED the problematic global CSS block that hid all buttons.
 
 
 def page_a():
