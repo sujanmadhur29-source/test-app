@@ -124,7 +124,8 @@ APPLE_TAILWIND_CSS = """
     }
 
     /* 6. Form Element Styling */
-    [data-testid="stTextInput"] > div > div > input {
+    [data-testid="stTextInput"] > div > div > input,
+    [data-testid="stTextArea"] > div > div > textarea {
         background-color: #1a1a1a;
         color: #FFFFFF;
         border: 1px solid #333333;
@@ -133,9 +134,14 @@ APPLE_TAILWIND_CSS = """
         font-size: 1rem;
         font-family: 'Inter', sans-serif;
     }
+    
+    [data-testid="stTextArea"] > div > div > textarea {
+        min-height: 100px; /* Specific to text area */
+    }
 
     /* Style for text input labels */
-    [data-testid="stTextInput"] label {
+    [data-testid="stTextInput"] label,
+    [data-testid="stTextArea"] label {
         color: #AAAAAA;
         font-weight: 500;
         padding-bottom: 5px;
@@ -143,14 +149,14 @@ APPLE_TAILWIND_CSS = """
 
     /* 7. Primary Action Button (for 'Generate') */
     .apple-primary-button-container div.stButton > button {
-        background-color: #007AFF; /* Apple Blue */
+        background-color: #000000; /* Black */
         color: #FFFFFF;
-        border: none;
+        border: 1px solid #888888; /* Grey border */
         border-radius: 9999px; /* Pill shape */
         padding: 12px 28px;
         font-size: 1.1rem;
         font-weight: 600;
-        transition: background-color 0.2s;
+        transition: background-color 0.2s, color 0.2s, border-color 0.2s; /* Added color and border-color */
         width: auto; /* Allow it to size to content */
         margin-top: 1.5rem;
     }
@@ -158,12 +164,13 @@ APPLE_TAILWIND_CSS = """
     .apple-primary-button-container div.stButton > button:disabled {
         background-color: #333; /* Disabled grey */
         color: #888;
-        border: none;
+        border: 1px solid #333; /* Match bg */
     }
 
     .apple-primary-button-container div.stButton > button:hover {
-        background-color: #0056b3; /* Darker blue on hover */
-        border: none;
+        background-color: #FFFFFF; /* White on hover */
+        color: #000000; /* Black text on hover */
+        border: 1px solid #FFFFFF; /* White border */
     }
 
     /* 8. Output Display Styling */
@@ -299,13 +306,15 @@ def main_page():
     
     # --- New Input Form ---
     with st.form(key="brand_form"):
-        idea = st.text_input(
+        idea = st.text_area(
             "What idea do you have in mind?", 
-            placeholder="e.g., A subscription service for AI-powered coding tutors"
+            placeholder="e.g., A subscription service for AI-powered coding tutors",
+            height=100
         )
-        values = st.text_input(
+        values = st.text_area(
             "What values are important to you?", 
-            placeholder="e.g., Accessibility, Innovation, and Community"
+            placeholder="e.g., Accessibility, Innovation, and Community",
+            height=100
         )
         
         # Center the button
