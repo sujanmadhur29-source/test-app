@@ -57,7 +57,7 @@ APPLE_TAILWIND_CSS = """
         margin-bottom: 3rem;
         padding: 0.5rem 0;
         background-color: #101010; /* Dark "strip" background */
-        /* border-radius: 12px;  <-- REMOVED as requested */
+        border-radius: 12px;  /* <-- RE-ADDED as requested */
     }
     
     /* Style for ALL buttons within the nav */
@@ -87,6 +87,7 @@ APPLE_TAILWIND_CSS = """
         background: none !important;
         border: none !important;
         cursor: default !important;
+        opacity: 1 !important; /* <-- ADDED to ensure visibility */
     }
 
 
