@@ -147,30 +147,30 @@ APPLE_TAILWIND_CSS = """
         padding-bottom: 5px;
     }
 
-    /* 7. Primary Action Button (for 'Generate') */
+    /* 7. Primary Action Button (for 'Generate') - NEW STYLE */
     .apple-primary-button-container div.stButton > button {
-        background-color: #000000; /* Black */
-        color: #FFFFFF;
-        border: 1px solid #888888; /* Grey border */
+        background: none !important;
+        color: #888888 !important; /* Inactive link color */
+        border: none !important;
         border-radius: 9999px; /* Pill shape */
         padding: 12px 28px;
         font-size: 1.1rem;
         font-weight: 600;
-        transition: background-color 0.2s, color 0.2s, border-color 0.2s; /* Added color and border-color */
+        transition: color 0.2s; /* Only transition color */
         width: auto; /* Allow it to size to content */
         margin-top: 1.5rem;
     }
     
     .apple-primary-button-container div.stButton > button:disabled {
-        background-color: #333; /* Disabled grey */
-        color: #888;
-        border: 1px solid #333; /* Match bg */
+        background: none !important;
+        color: #333 !important; /* Disabled grey */
+        border: none !important;
     }
 
     .apple-primary-button-container div.stButton > button:hover {
-        background-color: #FFFFFF; /* White on hover */
-        color: #000000; /* Black text on hover */
-        border: 1px solid #FFFFFF; /* White border */
+        background: none !important;
+        color: #FFFFFF !important; /* White on hover */
+        border: none !important;
     }
 
     /* 8. Output Display Styling */
@@ -226,7 +226,7 @@ st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
 
 PAGE_NAMES = {
     "Home": "main_page",
-    "Vision Pro": "page_a",
+    "Branding": "page_a", # Renamed from "Vision Pro"
     "MacBook": "page_b",
     "iPhone 16": "page_c",
     "Watch X": "page_d",
@@ -252,7 +252,7 @@ def create_main_navbar():
     st.markdown('<div class="apple-nav-container">', unsafe_allow_html=True)
     cols = st.columns(6)
     
-    page_keys = list(PAGE_NAMES.keys()) # ["Home", "Vision Pro", ...]
+    page_keys = list(PAGE_NAMES.keys()) # ["Home", "Branding", ...]
     page_values = list(PAGE_NAMES.values()) # ["main_page", "page_a", ...]
     
     with cols[0]:
@@ -263,7 +263,7 @@ def create_main_navbar():
     
     with cols[1]:
         is_active = st.session_state.current_page == page_values[1]
-        if st.button(page_keys[1], key="nav_vision", disabled=is_active):
+        if st.button(page_keys[1], key="nav_branding", disabled=is_active): # Updated key
             navigate_to(page_values[1])
             st.rerun()
                 
@@ -329,7 +329,7 @@ def main_page():
                 st.session_state.startup_idea = idea
                 st.session_state.startup_values = values
                 st.session_state.generating = True # Flag to show spinner on next page
-                navigate_to(PAGE_NAMES["Vision Pro"])
+                navigate_to(PAGE_NAMES["Branding"]) # Navigate to new page name
                 st.rerun()
 
 
@@ -372,7 +372,7 @@ def get_mock_brand_output(idea, values):
 
 
 def page_a():
-    """Vision Pro Page / Brand Output Page"""
+    """Branding Page / Brand Output Page"""
     create_main_navbar()
     
     # Check if we landed here from the form
@@ -404,13 +404,13 @@ def page_a():
         # st.session_state.startup_values = None
         
     else:
-        # Original "Vision Pro" content
-        st.markdown('<h1 class="apple-page-title">Apple Vision Pro</h1>', unsafe_allow_html=True)
-        st.markdown("## Spatial Computing is Here.")
+        # Original "Branding" page content (was "Vision Pro")
+        st.markdown('<h1 class="apple-page-title">Branding</h1>', unsafe_allow_html=True)
+        st.markdown("## Define Your Identity.")
         st.markdown("""
             <p style="font-size: 1.1rem; color: #E0E0E0;">
-            Vision Pro seamlessly blends digital content with your physical world. You can navigate the world with your eyes, hands, and voice. 
-            It’s a revolutionary way to work, communicate, and enjoy entertainment.
+            This is where your brand comes to life. A strong brand identity seamlessly blends your mission
+            with your values, creating a memorable experience for your audience.
             </p>
             <p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;">
             <i>To generate a brand identity, please return to the <b>Home</b> page and fill out the form.</i>
@@ -494,7 +494,7 @@ def page_e():
 
 page_functions = {
     PAGE_NAMES["Home"]: main_page,
-    PAGE_NAMES["Vision Pro"]: page_a,
+    PAGE_NAMES["Branding"]: page_a, # Updated
     PAGE_NAMES["MacBook"]: page_b,
     PAGE_NAMES["iPhone 16"]: page_c,
     PAGE_NAMES["Watch X"]: page_d,
