@@ -91,7 +91,9 @@ APPLE_TAILWIND_CSS = """
         width: 100%;
         border-bottom: 1px solid #2a2a2a; /* Subtle separator */
         margin-bottom: 3rem;
-        padding-bottom: 1rem;
+        padding: 0.5rem 0; /* Updated padding */
+        background-color: #101010; /* Dark "strip" background */
+        border-radius: 12px; /* Rounded corners */
     }
     
     /* Style for the buttons within the nav */
@@ -113,13 +115,15 @@ APPLE_TAILWIND_CSS = """
     }
     
     /* Style for the *active* link (which is just text) */
-    .apple-nav-active-link {
-        font-size: 0.95rem;
+    /* REMOVED .apple-nav-active-link rule */
+
+    /* NEW: Style for the *disabled* (active) button */
+    .apple-nav-container [data-testid="stButton"] > button:disabled {
         font-weight: 600; /* Bolder */
         color: #FFFFFF !important; /* Active link color */
-        text-align: center;
-        padding: 5px 10px;
-        display: block; /* Ensure it takes space */
+        background: none !important;
+        border: none !important;
+        cursor: default !important;
     }
 
 
@@ -163,52 +167,40 @@ def create_main_navbar():
     page_values = list(PAGE_NAMES.values()) # ["main_page", "page_a", ...]
     
     with cols[0]:
-        if st.session_state.current_page == page_values[0]:
-            st.markdown('<p class="apple-nav-active-link">Home</p>', unsafe_allow_html=True)
-        else:
-            if st.button(page_keys[0], key="nav_home"):
-                navigate_to(page_values[0])
-                st.rerun() # Use rerun for instant page switch
+        is_active = st.session_state.current_page == page_values[0]
+        if st.button(page_keys[0], key="nav_home", disabled=is_active):
+            navigate_to(page_values[0])
+            st.rerun() # Use rerun for instant page switch
     
     with cols[1]:
-        if st.session_state.current_page == page_values[1]:
-            st.markdown(f'<p class="apple-nav-active-link">{page_keys[1]}</p>', unsafe_allow_html=True)
-        else:
-            if st.button(page_keys[1], key="nav_vision"):
-                navigate_to(page_values[1])
-                st.rerun()
+        is_active = st.session_state.current_page == page_values[1]
+        if st.button(page_keys[1], key="nav_vision", disabled=is_active):
+            navigate_to(page_values[1])
+            st.rerun()
                 
     with cols[2]:
-        if st.session_state.current_page == page_values[2]:
-            st.markdown(f'<p class="apple-nav-active-link">{page_keys[2]}</p>', unsafe_allow_html=True)
-        else:
-            if st.button(page_keys[2], key="nav_mac"):
-                navigate_to(page_values[2])
-                st.rerun()
+        is_active = st.session_state.current_page == page_values[2]
+        if st.button(page_keys[2], key="nav_mac", disabled=is_active):
+            navigate_to(page_values[2])
+            st.rerun()
 
     with cols[3]:
-        if st.session_state.current_page == page_values[3]:
-            st.markdown(f'<p class="apple-nav-active-link">{page_keys[3]}</p>', unsafe_allow_html=True)
-        else:
-            if st.button(page_keys[3], key="nav_iphone"):
-                navigate_to(page_values[3])
-                st.rerun()
+        is_active = st.session_state.current_page == page_values[3]
+        if st.button(page_keys[3], key="nav_iphone", disabled=is_active):
+            navigate_to(page_values[3])
+            st.rerun()
                 
     with cols[4]:
-        if st.session_state.current_page == page_values[4]:
-            st.markdown(f'<p class="apple-nav-active-link">{page_keys[4]}</p>', unsafe_allow_html=True)
-        else:
-            if st.button(page_keys[4], key="nav_watch"):
-                navigate_to(page_values[4])
-                st.rerun()
+        is_active = st.session_state.current_page == page_values[4]
+        if st.button(page_keys[4], key="nav_watch", disabled=is_active):
+            navigate_to(page_values[4])
+            st.rerun()
                 
     with cols[5]:
-        if st.session_state.current_page == page_values[5]:
-            st.markdown(f'<p class="apple-nav-active-link">{page_keys[5]}</p>', unsafe_allow_html=True)
-        else:
-            if st.button(page_keys[5], key="nav_airpods"):
-                navigate_to(page_values[5])
-                st.rerun()
+        is_active = st.session_state.current_page == page_values[5]
+        if st.button(page_keys[5], key="nav_airpods", disabled=is_active):
+            navigate_to(page_values[5])
+            st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
