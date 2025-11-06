@@ -246,7 +246,7 @@ def page_a():
     """Vision Pro Page"""
     create_navigation_button() # <-- MOVED TO TOP
     st.markdown('<h1 class="apple-page-title">Apple Vision Pro</h1>', unsafe_allow_html=True)
-    st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=Vision+Pro+Demo", use_column_width=True)
+    ## st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=Vision+Pro+Demo", use_column_width=True)
     st.markdown("## Spatial Computing is Here.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -266,7 +266,7 @@ def page_b():
     """MacBook Page"""
     create_navigation_button() # <-- MOVED TO TOP
     st.markdown('<h1 class="apple-page-title">MacBook Pro M4</h1>', unsafe_allow_html=True)
-    st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=MacBook+Pro+M4", use_column_width=True)
+    ## st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=MacBook+Pro+M4", use_column_width=True)
     st.markdown("## Power. Efficiency. Pro.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -285,7 +285,7 @@ def page_c():
     """iPhone 16 Page"""
     create_navigation_button() # <-- MOVED TO TOP
     st.markdown('<h1 class="apple-page-title">iPhone 16 Pro</h1>', unsafe_allow_html=True)
-    st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=iPhone+16+Pro", use_column_width=True)
+    ## st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=iPhone+16+Pro", use_column_width=True)
     st.markdown("## A Giant Leap for Photography.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
