@@ -97,6 +97,29 @@ APPLE_TAILWIND_CSS = """
         background-color: #333333;
         border-color: #555555;
     }
+    
+    /* 5. Custom style for 'Back to Home' link-button */
+    .back-link-container {
+        text-align: left; /* Align link to the left */
+        margin-bottom: 2rem; /* Add space below it */
+    }
+    
+    .back-link-container div.stButton > button {
+        background: none !important;
+        border: none !important;
+        color: #888888 !important; /* Grey link color */
+        padding: 0 !important;
+        font-size: 1rem;
+        font-weight: 500;
+        text-align: left;
+    }
+    
+    .back-link-container div.stButton > button:hover {
+        background: none !important;
+        border: none !important;
+        color: #FFFFFF !important; /* White hover color */
+        text-decoration: underline;
+    }
 
     /* Hide default Streamlit Chrome for a cleaner look */
     #MainMenu {visibility: hidden;}
@@ -130,14 +153,11 @@ def navigate_to(page_key):
     st.session_state.current_page = page_key
 
 def create_navigation_button():
-    """Renders the "Back to Home" button used on all sub-pages."""
+    """Renders the "Back to Home" link at the top of sub-pages."""
     if st.session_state.current_page != PAGE_NAMES["Home"]:
-        st.markdown(
-            '<div style="text-align: center; margin-top: 40px;">', 
-            unsafe_allow_html=True
-        )
-        # Use a standard Streamlit button and let the CSS style it
-        if st.button("← Back to Home"):
+        st.markdown('<div class="back-link-container">', unsafe_allow_html=True)
+        # Use a specific key for the back button
+        if st.button("← Back to Home", key="btn_back_home"):
             navigate_to(PAGE_NAMES["Home"])
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -224,6 +244,7 @@ def main_page():
 
 def page_a():
     """Vision Pro Page"""
+    create_navigation_button() # <-- MOVED TO TOP
     st.markdown('<h1 class="apple-page-title">Apple Vision Pro</h1>', unsafe_allow_html=True)
     st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=Vision+Pro+Demo", use_column_width=True)
     st.markdown("## Spatial Computing is Here.")
@@ -238,11 +259,12 @@ def page_a():
             <li>**3D Camera:** Capture spatial photos and videos.</li>
         </ul>
     """, unsafe_allow_html=True)
-    create_navigation_button()
+    # create_navigation_button() <-- REMOVED FROM BOTTOM
 
 
 def page_b():
     """MacBook Page"""
+    create_navigation_button() # <-- MOVED TO TOP
     st.markdown('<h1 class="apple-page-title">MacBook Pro M4</h1>', unsafe_allow_html=True)
     st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=MacBook+Pro+M4", use_column_width=True)
     st.markdown("## Power. Efficiency. Pro.")
@@ -257,10 +279,11 @@ def page_b():
             <li>**Up to 22 Hours:** Unprecedented battery life on a single charge.</li>
         </ul>
     """, unsafe_allow_html=True)
-    create_navigation_button()
+    # create_navigation_button() <-- REMOVED FROM BOTTOM
 
 def page_c():
     """iPhone 16 Page"""
+    create_navigation_button() # <-- MOVED TO TOP
     st.markdown('<h1 class="apple-page-title">iPhone 16 Pro</h1>', unsafe_allow_html=True)
     st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=iPhone+16+Pro", use_column_width=True)
     st.markdown("## A Giant Leap for Photography.")
@@ -275,10 +298,11 @@ def page_c():
             <li>**48MP Main Camera:** Unrivaled low-light performance.</li>
         </ul>
     """, unsafe_allow_html=True)
-    create_navigation_button()
+    # create_navigation_button() <-- REMOVED FROM BOTTOM
 
 def page_d():
     """Watch X Page"""
+    create_navigation_button() # <-- MOVED TO TOP
     st.markdown('<h1 class="apple-page-title">Apple Watch X</h1>', unsafe_allow_html=True)
     st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=Apple+Watch+X", use_column_width=True)
     st.markdown("## Reimagined. Revolutionary.")
@@ -293,10 +317,11 @@ def page_d():
             <li>**New Health Sensors:** Advanced crash and fall detection.</li>
         </ul>
     """, unsafe_allow_html=True)
-    create_navigation_button()
+    # create_navigation_button() <-- REMOVED FROM BOTTOM
     
 def page_e():
     """AirPods Max Page"""
+    create_navigation_button() # <-- MOVED TO TOP
     st.markdown('<h1 class="apple-page-title">AirPods Max (Gen 2)</h1>', unsafe_allow_html=True)
     st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=AirPods+Max+Gen+2", use_column_width=True)
     st.markdown("## Audio Purity. Redefined.")
@@ -311,7 +336,7 @@ def page_e():
             <li>**New Carrying Case:** Ultra-low power mode for extended standby.</li>
         </ul>
     """, unsafe_allow_html=True)
-    create_navigation_button()
+    # create_navigation_button() <-- REMOVED FROM BOTTOM
 
 
 # --- 4. MAIN APPLICATION LOGIC ---
