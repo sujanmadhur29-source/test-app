@@ -163,7 +163,7 @@ APPLE_TAILWIND_CSS = """
     
     .apple-primary-button-container div.stButton > button:disabled {
         background: #333 !important; /* Disabled grey */
-        color: #fafa19 !important;
+        color: #FFFFFF !important;
         border: none !important;
     }
 
