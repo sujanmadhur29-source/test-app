@@ -1,333 +1,325 @@
-# app.py
 import streamlit as st
 
-# --- Page config ---
-st.set_page_config(page_title="Apple-Inspired Streamlit App", page_icon="🍎", layout="wide")
+# --- 1. CONFIGURATION AND STYLING (MIMICKING APPLE/TAILWIND) ---
 
-# --- Session defaults ---
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-if "theme" not in st.session_state:
-    st.session_state.theme = "light"  # 'light' or 'dark'
-
-# Helper to navigate
-def navigate(p):
-    st.session_state.page = p
-
-# --- Minimal CSS (Apple-ish) injected natively ---
-# We keep CSS minimal and scoped to avoid interfering with Streamlit internals.
-base_css = f"""
+# The core CSS block to inject. This sets the dark mode theme, 
+# uses the Inter font (a common choice for modern, clean UI), 
+# and provides custom classes for the Apple-like components.
+APPLE_TAILWIND_CSS = """
 <style>
-:root {{
-  --bg-light: #f7f8fa;
-  --bg-dark: #0f1724;
-  --card-light: rgba(255,255,255,0.95);
-  --card-dark: rgba(17,24,39,0.88);
-  --muted-light: #6b7280;
-  --muted-dark: #9ca3af;
-  --accent: #0b69ff;
-  --radius: 14px;
-  --glass: rgba(255,255,255,0.6);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-}}
+    /* 1. Global Setup (Dark Mode and Font) */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+    
+    html, body, [data-testid="stAppViewContainer"] {
+        background-color: #000000; /* Pure Black for contrast */
+        color: #FFFFFF;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Center the main container content and maximize width */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        max-width: 1200px !important;
+    }
 
-/* Theme */
-[data-theme="light"] .stApp {{
-  background: linear-gradient(180deg, var(--bg-light), #ffffff);
-  color: #0f1724;
-}}
-[data-theme="dark"] .stApp {{
-  background: linear-gradient(180deg, #041026, var(--bg-dark));
-  color: #e6eef8;
-}}
+    /* 2. Custom Typography and Layout */
+    .apple-hero-title {
+        font-size: 4rem;
+        font-weight: 700;
+        line-height: 1.1;
+        text-align: center;
+        margin-bottom: 1rem;
+        background: linear-gradient(180deg, #FFFFFF, #B0B0B0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 
-/* Top nav */
-.app-header {{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding:18px 22px;
-  border-radius: 12px;
-  margin-bottom: 12px;
-}}
-.brand {{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  font-size:20px;
-  font-weight:700;
-}}
-.brand .logo {{
-  display:inline-flex;
-  width:40px;
-  height:40px;
-  border-radius:10px;
-  align-items:center;
-  justify-content:center;
-  font-size:20px;
-  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
-}}
+    .apple-hero-subtitle {
+        font-size: 1.5rem;
+        font-weight: 400;
+        text-align: center;
+        color: #888888;
+        max-width: 600px;
+        margin: 0 auto 3rem auto;
+    }
+    
+    .apple-page-title {
+        font-size: 3rem;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
 
-/* Nav buttons */
-.nav-row {{
-  display:flex;
-  gap:8px;
-  align-items:center;
-}}
-.nav-btn {{
-  background:var(--card-light);
-  border-radius: 10px;
-  padding:8px 12px;
-  font-weight:600;
-  border: none;
-  cursor: pointer;
-  transition: transform .12s ease, box-shadow .12s ease;
-}}
-[data-theme="dark"] .nav-btn {{ background: var(--card-dark); }}
-.nav-btn:hover {{ transform: translateY(-3px); box-shadow: 0 10px 30px rgba(2,6,23,0.08); }}
+    /* 3. Card/Navigation Styling (Minimalist) */
+    .apple-card {
+        background-color: #1a1a1a;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+    }
+    
+    .apple-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    .apple-card h3 {
+        color: #FFFFFF;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
 
-/* Page container: fixed min height reduces jumps when content changes */
-.page-container {{
-  min-height: 640px;     /* <-- important: prevents container jumps across pages */
-  padding: 22px;
-  border-radius: 12px;
-  margin-bottom: 18px;
-}}
+    .apple-card p {
+        color: #AAAAAA;
+        font-size: 1rem;
+    }
 
-/* Cards grid */
-.cards {{
-  display: grid;
-  gap: 18px;
-  grid-template-columns: 1fr;
-}}
-@media(min-width:900px) {{
-  .cards {{ grid-template-columns: repeat(3, 1fr); }}
-}}
-.card {{
-  background: var(--card-light);
-  border-radius: var(--radius);
-  padding: 20px;
-  box-shadow: 0 10px 30px rgba(2,6,23,0.06);
-  transition: transform .16s ease, box-shadow .16s ease;
-  min-height: 120px;
-}}
-[data-theme="dark"] .card {{ background: var(--card-dark); box-shadow: 0 8px 24px rgba(0,0,0,0.6); }}
-.card:hover {{ transform: translateY(-6px); box-shadow: 0 18px 52px rgba(2,6,23,0.12); }}
-.card-title {{ font-size:18px; font-weight:700; margin-bottom:8px; }}
-.card-desc {{ color: var(--muted-light); }}
-[data-theme="dark"] .card-desc {{ color: var(--muted-dark); }}
+    /* 4. Button Styling (Clean and Rounded) */
+    div.stButton > button {
+        background-color: #1a1a1a; 
+        color: #FFFFFF;
+        border: 1px solid #333333;
+        border-radius: 9999px; /* Pill shape */
+        padding: 10px 20px;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: background-color 0.2s, border-color 0.2s;
+        cursor: pointer;
+    }
 
-/* small utility */
-.kv-row {{ display:flex; align-items:center; gap:8px; margin-top:8px; }}
-.btn-link {{
-  color: var(--accent);
-  font-weight:700;
-  text-decoration: none;
-}}
-.small-muted {{ color: var(--muted-light); font-size:13px; }}
-[data-theme="dark"] .small-muted {{ color: var(--muted-dark); }}
+    div.stButton > button:hover {
+        background-color: #333333;
+        border-color: #555555;
+    }
 
-/* Sidebar tweaks */
-[data-testid="stSidebar"] {{
-  border-radius: 12px;
-}}
-
-/* make Streamlit's main container use our theme attribute */
+    /* Hide default Streamlit Chrome for a cleaner look */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
 </style>
 """
 
-# Inject CSS and set theme attribute on document root via a tiny script
-# Using st.markdown unsafe HTML to set data-theme on top-level element.
-theme_script = f"""
-<script>
-const theme = "{st.session_state.theme}";
-document.documentElement.setAttribute('data-theme', theme);
-</script>
-"""
+# Apply the custom CSS at the start
+st.set_page_config(layout="wide", page_title="Apple-Inspired Streamlit App")
+st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
 
-# Render CSS + script
-st.markdown(base_css + theme_script, unsafe_allow_html=True)
 
-# --- Header with native Streamlit layout (columns) ---
-with st.container():
-    cols = st.columns([1, 3, 1])
-    with cols[0]:
-        # Brand area
+# --- 2. STATE AND NAVIGATION FUNCTIONS ---
+
+PAGE_NAMES = {
+    "Home": "main_page",
+    "Vision Pro": "page_a",
+    "MacBook": "page_b",
+    "iPhone 16": "page_c",
+    "Watch X": "page_d",
+    "AirPods Max": "page_e",
+}
+
+# Initialize session state for page management
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = PAGE_NAMES["Home"]
+
+def navigate_to(page_key):
+    """Sets the current page in session state."""
+    st.session_state.current_page = page_key
+
+def create_navigation_button():
+    """Renders the "Back to Home" button used on all sub-pages."""
+    if st.session_state.current_page != PAGE_NAMES["Home"]:
         st.markdown(
-            """
-            <div class="app-header">
-              <div class="brand">
-                <div class="logo">🍎</div>
-                <div>
-                  <div style="font-weight:700;">Streamlit OS</div>
-                  <div style="font-size:12px;color:gray;margin-top:2px;">Apple-inspired UI</div>
-                </div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+            '<div style="text-align: center; margin-top: 40px;">', 
+            unsafe_allow_html=True
         )
+        # Use a standard Streamlit button and let the CSS style it
+        if st.button("← Back to Home"):
+            navigate_to(PAGE_NAMES["Home"])
+        st.markdown('</div>', unsafe_allow_html=True)
+
+
+# --- 3. PAGE CONTENT FUNCTIONS ---
+
+def main_page():
+    """The main landing page with the hero section and navigation grid."""
+    st.markdown('<div class="apple-hero-title">Introducing a New Era of Innovation.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="apple-hero-subtitle">Experience seamless integration, revolutionary performance, and timeless design across all our platforms.</p>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown("---")
+    
+    # Use Streamlit columns for the grid layout
+    cols = st.columns(3)
+    
+    # Navigation Cards (Page A and B)
+    with cols[0]:
+        st.markdown(
+            f'<div class="apple-card" onclick="document.getElementById(\'nav-vision-pro\').click()"><h3>{list(PAGE_NAMES.keys())[1]}</h3><p>Spatial computing. Now available.</p></div>',
+            unsafe_allow_html=True
+        )
+        if st.button("Navigate to Vision Pro", key="nav-vision-pro"):
+            navigate_to(PAGE_NAMES["Vision Pro"])
+
     with cols[1]:
-        # Centered nav buttons (native Streamlit buttons)
-        nav_col1, nav_col2 = st.columns([1, 1])
-        # We'll render as buttons using st.button so clicks are native and predictable.
-        # Using forms would be overkill; st.button updates session_state on click.
-        nav_buttons = st.container()
-        # Create a row of buttons with consistent styles using HTML-wrapped buttons that trigger query param navigation.
-        # But to keep everything native, use st.button in a single row via columns:
-        bcols = st.columns([1,1,1,1,1,1])
-        if bcols[0].button("Home"):
-            navigate("home")
-        if bcols[1].button("Page 1"):
-            navigate("page1")
-        if bcols[2].button("Page 2"):
-            navigate("page2")
-        if bcols[3].button("Page 3"):
-            navigate("page3")
-        if bcols[4].button("Page 4"):
-            navigate("page4")
-        if bcols[5].button("Page 5"):
-            navigate("page5")
+        st.markdown(
+            f'<div class="apple-card" onclick="document.getElementById(\'nav-macbook\').click()"><h3>{list(PAGE_NAMES.keys())[2]}</h3><p>M4 Pro. Unleash Pro performance.</p></div>',
+            unsafe_allow_html=True
+        )
+        if st.button("Navigate to MacBook", key="nav-macbook"):
+            navigate_to(PAGE_NAMES["MacBook"])
+
     with cols[2]:
-        # Theme toggle (native)
-        tcol1, tcol2 = st.columns([2,1])
-        with tcol1:
-            # small label to indicate theme mode
-            if st.session_state.theme == "light":
-                st.write("")  # spacing
-            else:
-                st.write("")
-        with tcol2:
-            # Theme switch: checkbox toggles theme
-            new_theme = st.toggle("Dark mode", value=(st.session_state.theme == "dark"))
-            # If toggle changed, update session_state and rerun to apply new CSS attribute
-            if new_theme and st.session_state.theme != "dark":
-                st.session_state.theme = "dark"
-                st.experimental_rerun()
-            if not new_theme and st.session_state.theme != "light":
-                st.session_state.theme = "light"
-                st.experimental_rerun()
+        st.markdown(
+            f'<div class="apple-card" onclick="document.getElementById(\'nav-iphone\').click()"><h3>{list(PAGE_NAMES.keys())[3]}</h3><p>Capture. Create. Connect. Better.</p></div>',
+            unsafe_allow_html=True
+        )
+        if st.button("Navigate to iPhone 16", key="nav-iphone"):
+            navigate_to(PAGE_NAMES["iPhone 16"])
+            
+    # Navigation Cards (Page D and E)
+    cols = st.columns(3)
+    
+    with cols[0]:
+        st.markdown(
+            f'<div class="apple-card" onclick="document.getElementById(\'nav-watch\').click()"><h3>{list(PAGE_NAMES.keys())[4]}</h3><p>The future of health is on your wrist.</p></div>',
+            unsafe_allow_html=True
+        )
+        if st.button("Navigate to Watch X", key="nav-watch"):
+            navigate_to(PAGE_NAMES["Watch X"])
 
-# --- Page Rendering: native Streamlit controls only ---
-# Wrap page content in a container with class `page-container` (applies min-height)
-page_container = st.container()
-with page_container:
-    st.markdown('<div class="page-container">', unsafe_allow_html=True)
+    with cols[1]:
+        st.markdown(
+            f'<div class="apple-card" onclick="document.getElementById(\'nav-airpods\').click()"><h3>{list(PAGE_NAMES.keys())[5]}</h3><p>Redesigned for pure, immersive audio.</p></div>',
+            unsafe_allow_html=True
+        )
+        if st.button("Navigate to AirPods Max", key="nav-airpods"):
+            navigate_to(PAGE_NAMES["AirPods Max"])
+            
+    # Empty column for alignment
+    with cols[2]:
+        st.markdown(
+            '<div class="apple-card" style="opacity: 0.2; cursor: default;"><h3>More Coming Soon</h3><p>Stay tuned for our next groundbreaking product.</p></div>',
+            unsafe_allow_html=True
+        )
 
-    if st.session_state.page == "home":
-        st.markdown("<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;'>"
-                    "<div style=''>"
-                    "<h1 style='margin:0 0 4px 0;'>🍎 Welcome to Streamlit OS</h1>"
-                    "<div class='small-muted'>Apple-inspired multiplatform UI — native Streamlit layout.</div>"
-                    "</div>"
-                    "</div>",
-                    unsafe_allow_html=True)
+    # Hide the Streamlit buttons used for navigation logic (they are triggered via JS click handlers on the custom cards)
+    st.markdown("""
+        <style>
+        [data-testid="stButton"] {
+            display: none;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-        # Cards grid implemented with native columns to avoid HTML layout issues.
-        # We'll render 3 columns per row on wide screens using Streamlit columns.
-        # For responsiveness, use width-based column creation.
-        # Build cards as st.markdown blocks (still native).
-        cards = [
-            ("Page 1 — Overview", "Intro, value proposition and product highlights.", "page1"),
-            ("Page 2 — Analytics", "Dashboards, charts and KPIs.", "page2"),
-            ("Page 3 — Reports", "Exportable reports & tables.", "page3"),
-            ("Page 4 — Collaboration", "Team boards, comments and shared views.", "page4"),
-            ("Page 5 — Settings", "Profile, preferences and integrations.", "page5"),
-        ]
 
-        # Render 3-per-row responsive-ish using columns
-        cols_per_row = 3
-        for i in range(0, len(cards), cols_per_row):
-            row = cards[i : i + cols_per_row]
-            cols = st.columns(len(row))
-            for c, card in zip(cols, row):
-                title, desc, key = card
-                with c:
-                    st.markdown(f"""
-                    <div class="card">
-                      <div class="card-title">{title}</div>
-                      <div class="card-desc">{desc}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    # native navigation button under the card
-                    if st.button("Open", key=f"open_{key}"):
-                        navigate(key)
+def page_a():
+    """Vision Pro Page"""
+    st.markdown('<h1 class="apple-page-title">Apple Vision Pro</h1>', unsafe_allow_html=True)
+    st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=Vision+Pro+Demo", use_column_width=True)
+    st.markdown("## Spatial Computing is Here.")
+    st.markdown("""
+        <p style="font-size: 1.1rem; color: #E0E0E0;">
+        Vision Pro seamlessly blends digital content with your physical world. You can navigate the world with your eyes, hands, and voice. 
+        It’s a revolutionary way to work, communicate, and enjoy entertainment.
+        </p>
+        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
+            <li>**Optic ID:** Advanced security that analyzes your iris.</li>
+            <li>**R1 Chip:** Processes input from 12 cameras, five sensors, and six microphones.</li>
+            <li>**3D Camera:** Capture spatial photos and videos.</li>
+        </ul>
+    """, unsafe_allow_html=True)
+    create_navigation_button()
 
-    elif st.session_state.page == "page1":
-        st.header("Page 1 — Overview")
-        st.write("This page contains an overview of the product, value proposition, and primary features.")
-        st.markdown("---")
-        st.subheader("Highlights")
-        st.write("- Clean minimal design inspired by Apple")
-        st.write("- Focus on whitespace, typography, and smooth micro-interactions")
-        st.markdown('<div style="margin-top:12px;"><button class="nav-btn" onclick="document.location=\'\'"> </button></div>', unsafe_allow_html=True)
-        if st.button("← Back to Home"):
-            navigate("home")
 
-    elif st.session_state.page == "page2":
-        st.header("Page 2 — Analytics")
-        st.write("Interactive analytics. Below is a sample chart created natively using Altair for smooth integration.")
-        # Example: sample Altair chart (native)
-        import pandas as pd
-        import altair as alt
-        df = pd.DataFrame({
-            "month": ["Jan","Feb","Mar","Apr","May","Jun"],
-            "value": [10, 15, 9, 20, 23, 18]
-        })
-        chart = alt.Chart(df).mark_line(point=True).encode(
-            x="month",
-            y="value"
-        ).properties(width="container", height=360)
-        st.altair_chart(chart, use_container_width=True)
-        st.markdown("")
-        if st.button("← Back to Home"):
-            navigate("home")
+def page_b():
+    """MacBook Page"""
+    st.markdown('<h1 class="apple-page-title">MacBook Pro M4</h1>', unsafe_allow_html=True)
+    st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=MacBook+Pro+M4", use_column_width=True)
+    st.markdown("## Power. Efficiency. Pro.")
+    st.markdown("""
+        <p style="font-size: 1.1rem; color: #E0E0E0;">
+        The MacBook Pro, supercharged by the M4 chip, delivers a staggering leap in performance and battery life. 
+        It is the ultimate notebook for professional creators and developers.
+        </p>
+        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
+            <li>**Liquid Retina XDR:** The best display ever in a notebook.</li>
+            <li>**Neural Engine:** 16-core, for advanced machine learning tasks.</li>
+            <li>**Up to 22 Hours:** Unprecedented battery life on a single charge.</li>
+        </ul>
+    """, unsafe_allow_html=True)
+    create_navigation_button()
 
-    elif st.session_state.page == "page3":
-        st.header("Page 3 — Reports")
-        st.write("Downloadable reports and export options.")
-        st.markdown("### Sample table")
-        import pandas as pd
-        df = pd.DataFrame({
-            "Name": ["Alice","Bob","Charlie"],
-            "Metric A": [12, 9, 14],
-            "Metric B": [7, 11, 5]
-        })
-        st.dataframe(df, use_container_width=True, height=240)
-        st.markdown("")
-        if st.button("← Back to Home"):
-            navigate("home")
+def page_c():
+    """iPhone 16 Page"""
+    st.markdown('<h1 class="apple-page-title">iPhone 16 Pro</h1>', unsafe_allow_html=True)
+    st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=iPhone+16+Pro", use_column_width=True)
+    st.markdown("## A Giant Leap for Photography.")
+    st.markdown("""
+        <p style="font-size: 1.1rem; color: #E0E0E0;">
+        The new camera system in iPhone 16 Pro brings light and detail to your images like never before. 
+        The Action button and USB-C port simplify everything.
+        </p>
+        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
+            <li>**A18 Bionic Chip:** Faster performance, superior gaming.</li>
+            <li>**ProMotion Display:** Adaptive 120Hz refresh rate.</li>
+            <li>**48MP Main Camera:** Unrivaled low-light performance.</li>
+        </ul>
+    """, unsafe_allow_html=True)
+    create_navigation_button()
 
-    elif st.session_state.page == "page4":
-        st.header("Page 4 — Collaboration")
-        st.write("Team tools: comments, shared boards, and simple message area implemented with native widgets.")
-        st.text_input("Post a quick note", key="collab_note")
-        if st.button("Save Note"):
-            st.success("Note saved (session-only)")
-        st.markdown("")
-        if st.button("← Back to Home"):
-            navigate("home")
+def page_d():
+    """Watch X Page"""
+    st.markdown('<h1 class="apple-page-title">Apple Watch X</h1>', unsafe_allow_html=True)
+    st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=Apple+Watch+X", use_column_width=True)
+    st.markdown("## Reimagined. Revolutionary.")
+    st.markdown("""
+        <p style="font-size: 1.1rem; color: #E0E0E0;">
+        Apple Watch X features an all-new design with a thinner case and a magnetic band attachment system. 
+        It’s the essential tool for a healthy and active life.
+        </p>
+        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
+            <li>**S10 Chip:** Faster, more efficient processing.</li>
+            <li>**Blood Glucose Monitoring:** Non-invasive monitoring capability.</li>
+            <li>**New Health Sensors:** Advanced crash and fall detection.</li>
+        </ul>
+    """, unsafe_allow_html=True)
+    create_navigation_button()
+    
+def page_e():
+    """AirPods Max Page"""
+    st.markdown('<h1 class="apple-page-title">AirPods Max (Gen 2)</h1>', unsafe_allow_html=True)
+    st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=AirPods+Max+Gen+2", use_column_width=True)
+    st.markdown("## Audio Purity. Redefined.")
+    st.markdown("""
+        <p style="font-size: 1.1rem; color: #E0E0E0;">
+        AirPods Max deliver unparalleled high-fidelity audio with industry-leading Active Noise Cancellation. 
+        They've been updated with USB-C and extended battery life.
+        </p>
+        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
+            <li>**H3 Chip:** Advanced computational audio processing.</li>
+            <li>**Lossless Audio:** Support for high-resolution lossless audio.</li>
+            <li>**New Carrying Case:** Ultra-low power mode for extended standby.</li>
+        </ul>
+    """, unsafe_allow_html=True)
+    create_navigation_button()
 
-    elif st.session_state.page == "page5":
-        st.header("Page 5 — Settings")
-        st.write("User preferences and integrations.")
-        # native theme selector here, mirrors top toggle
-        theme_sel = st.radio("Select theme (native)", options=["light", "dark"], index=0 if st.session_state.theme=="light" else 1)
-        if theme_sel != st.session_state.theme:
-            st.session_state.theme = theme_sel
-            st.experimental_rerun()
-        st.markdown("")
-        if st.button("← Back to Home"):
-            navigate("home")
 
-    else:
-        st.info("Page not found — returning home.")
-        if st.button("Return to home"):
-            navigate("home")
+# --- 4. MAIN APPLICATION LOGIC ---
 
-    st.markdown("</div>", unsafe_allow_html=True)  # close page-container
+page_functions = {
+    PAGE_NAMES["Home"]: main_page,
+    PAGE_NAMES["Vision Pro"]: page_a,
+    PAGE_NAMES["MacBook"]: page_b,
+    PAGE_NAMES["iPhone 16"]: page_c,
+    PAGE_NAMES["Watch X"]: page_d,
+    PAGE_NAMES["AirPods Max"]: page_e,
+}
 
-# --- Footer (keeps consistent height footprint) ---
-with st.container():
-    st.markdown("""<div style="margin-top:6px; padding:10px 6px; font-size:13px; color:gray;">Made with ❤️ — Streamlit native layout (no iframe)</div>""", unsafe_allow_html=True)
+# Execute the function corresponding to the current page state
+page_functions[st.session_state.current_page]()
