@@ -319,7 +319,7 @@ def main_page():
         
         # Center the button
         st.markdown('<div class="apple-primary-button-container" style="display: flex; justify-content: center;">', unsafe_allow_html=True)
-        submitted = st.form_submit_button("Generate Brand Identity")
+        submitted = st.form_submit_button("Generate Brand Identity", type="primary")
         st.markdown('</div>', unsafe_allow_html=True)
 
         if submitted:
