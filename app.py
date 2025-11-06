@@ -3,25 +3,36 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Apple-Inspired Streamlit App", page_icon="🍎", layout="wide")
-st.title("")  # prevent Streamlit from injecting extra header space
+# avoid Streamlit default header spacing
+st.title("")
 
-# Read query param for simple routing
+# read query param for routing
 params = st.experimental_get_query_params()
 page = params.get("page", ["0"])[0]
 
-# The HTML/CSS/JS chunk (Tailwind via CDN + Lucide icons)
-# We'll render this entire block via st.components.v1.html so HTML is not escaped.
-base_html = """
+# ------------------------------------------------------------------
+# HTML/CSS/JS to inject. This block includes:
+# - styles
+# - theme toggle (localStorage)
+# - auto-resize script that posts height to parent
+# - fallback internal scrolling if parent doesn't accept resize
+# ------------------------------------------------------------------
+base_html = r"""
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <link href="https://unpkg.com/lucide-static@latest/font/lucide.css" rel="stylesheet">
 
 <style>
   :root { --bg-light: linear-gradient(to bottom right,#f9fafb,#ffffff); --bg-dark: linear-gradient(to bottom right,#0b1220,#111827); }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin:0; padding:0; }
+  html,body { height: 100%; margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   [data-theme='light'] { background: var(--bg-light); color: #0f172a; }
   [data-theme='dark'] { background: var(--bg-dark); color: #e6eef8; }
 
-  .app-shell { padding: 20px 32px; min-height: 380px; box-sizing: border-box; }
+  /* outer wrapper that we ask Streamlit to size to content */
+  .app-shell { box-sizing: border-box; padding: 20px 32px; width: 100%; display: block; }
+
+  /* If parent doesn't allow dynamic resize, .inner-scroll will handle internal scroll */
+  .inner-scroll { max-height: 100vh; overflow: auto; padding-bottom: 28px; box-sizing: border-box; }
+
   .nav { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
   .brand { display:flex; align-items:center; gap:10px; font-weight:600; font-size:18px; }
   .nav-buttons { display:flex; gap:8px; align-items:center; }
@@ -65,23 +76,61 @@ base_html = """
 </style>
 
 <script>
-  // Theme persistence
+  // Theme persistence logic
   function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem('theme', theme); } catch(e){}
+    try { localStorage.setItem('theme', theme); } catch (e) {}
   }
   function toggleTheme() {
     const cur = document.documentElement.getAttribute('data-theme') || 'light';
     setTheme(cur === 'dark' ? 'light' : 'dark');
+    // After toggling theme, recompute and send new height
+    setTimeout(postHeightToParent, 120);
   }
   document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('theme') || 'light';
     setTheme(saved);
+    // Initial post of height after DOM loaded
+    setTimeout(postHeightToParent, 120);
+  });
+
+  // Auto-resize: compute document height and post message to parent to request frame height update.
+  function getDocHeight() {
+    const body = document.body;
+    const html = document.documentElement;
+    return Math.max(
+      body.scrollHeight, body.offsetHeight,
+      html.clientHeight, html.scrollHeight, html.offsetHeight
+    );
+  }
+
+  function postHeightToParent() {
+    const h = getDocHeight();
+    // Streamlit listens to a special message type for resizing: setFrameHeight
+    // We attempt both known patterns for compatibility.
+    try {
+      // Preferred: Streamlit's internal receiver
+      window.parent.postMessage({isStreamlitMessage: true, type: 'setFrameHeight', height: h}, '*');
+    } catch (e) {
+      // fallback general message
+      window.parent.postMessage({type: 'setFrameHeight', height: h}, '*');
+    }
+  }
+
+  // Observe DOM changes and post updated height (handles navigation content changes)
+  const observer = new MutationObserver(function() {
+    postHeightToParent();
+  });
+  observer.observe(document.documentElement || document.body, { childList: true, subtree: true, characterData: true });
+
+  // Also post height on window resize (responsive)
+  window.addEventListener('resize', function() {
+    setTimeout(postHeightToParent, 80);
   });
 </script>
 """
 
-# Helpers to produce page-specific HTML
+# Helper functions to build inner HTML blocks
 def render_nav():
     return """
     <div class="nav">
@@ -136,6 +185,7 @@ def render_home_cards():
     """
 
 def render_page(title, desc):
+    # note: Back link updates query param and causes Streamlit rerun
     return f"""
     <div class="page-wrap fade">
       <div class="page-title">{title}</div>
@@ -144,8 +194,15 @@ def render_page(title, desc):
     </div>
     """
 
-# Build the final HTML to inject into Streamlit component
-html_parts = [base_html, '<div class="app-shell">', render_nav()]
+# Build final HTML:
+# We place content inside .inner-scroll so that if the host refuses dynamic resizing,
+# the inner area will scroll without causing Streamlit layout jumps.
+html_parts = [
+    base_html,
+    '<div class="app-shell">',
+    '<div class="inner-scroll">',  # inner scroll container (fallback)
+    render_nav()
+]
 
 if page == "0":
     html_parts.append('<div class="center"><h1 style="font-size:36px;margin-bottom:6px;">🍎 Welcome to Streamlit OS</h1>')
@@ -162,11 +219,13 @@ elif page == "4":
 elif page == "5":
     html_parts.append(render_page("Page 5 — Settings", "Preferences, theming and account settings."))
 else:
-    html_parts.append(render_page("Page not found", "The page parameter is invalid — returning to Home."))
+    html_parts.append(render_page("Page not found", "Invalid page parameter — returning to Home."))
 
+html_parts.append('</div>')  # close inner-scroll
 html_parts.append('</div>')  # close app-shell
 final_html = "\n".join(html_parts)
 
-# Render via components.html so HTML is not escaped
-# Height is set to 800 to comfortably show content; Streamlit will allow scrolling.
-components.html(final_html, height=800, scrolling=True)
+# Render with components.html
+# Height: we set a reasonably large default height; the embedded script will attempt to resize it to exact content height.
+# If resizing is not accepted by the host, the inner-scroll area will provide internal scrolling and stop Streamlit layout jumps.
+components.html(final_html, height=900, scrolling=True)
