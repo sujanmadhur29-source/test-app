@@ -147,33 +147,59 @@ APPLE_TAILWIND_CSS = """
         padding-bottom: 5px;
     }
 
-    /* 7. Primary Action Button (for 'Generate') - NEW STYLE */
+    /* 7. Primary Action Button (for 'Generate') - Primary Style */
     .apple-primary-button-container div.stButton > button {
-        background: none !important;
-        color: #888888 !important; /* Inactive link color */
+        background-color: #007AFF !important; /* Apple Blue */
+        color: #FFFFFF !important;
         border: none !important;
         border-radius: 9999px; /* Pill shape */
         padding: 12px 28px;
         font-size: 1.1rem;
         font-weight: 600;
-        transition: color 0.2s; /* Only transition color */
+        transition: background-color 0.2s;
         width: auto; /* Allow it to size to content */
         margin-top: 1.5rem;
     }
     
     .apple-primary-button-container div.stButton > button:disabled {
-        background: none !important;
-        color: #333 !important; /* Disabled grey */
+        background: #333 !important; /* Disabled grey */
+        color: #888 !important;
         border: none !important;
     }
 
     .apple-primary-button-container div.stButton > button:hover {
-        background: none !important;
-        color: #FFFFFF !important; /* White on hover */
+        background-color: #0056b3 !important; /* Darker blue on hover */
+        color: #FFFFFF !important;
         border: none !important;
     }
+    
+    /* 8. Input Summary Styling */
+    .input-summary-section {
+        background-color: #101010; /* Darker than output */
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .input-summary-section h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #AAAAAA; /* Grey label */
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .input-summary-section p {
+        font-size: 1.1rem;
+        color: #E0E0E0;
+        line-height: 1.6;
+        font-style: italic;
+        /* Use pre-wrap to respect newlines in the input */
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
 
-    /* 8. Output Display Styling */
+    /* 9. Output Display Styling */
     .brand-output-section {
         background-color: #1a1a1a;
         border-radius: 12px;
@@ -378,6 +404,16 @@ def page_a():
     # Check if we landed here from the form
     if st.session_state.startup_idea and st.session_state.startup_values:
         st.markdown('<h1 class="apple-page-title">Your Brand Identity</h1>', unsafe_allow_html=True)
+        
+        # Display the inputs
+        st.markdown(f"""
+        <div class="input-summary-section">
+            <h3>Startup Idea</h3>
+            <p>"{st.session_state.startup_idea}"</p>
+            <h3 style="margin-top: 1rem;">Values</h3>
+            <p>"{st.session_state.startup_values}"</p>
+        </div>
+        """, unsafe_allow_html=True)
         
         output_placeholder = st.empty()
         
