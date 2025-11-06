@@ -372,17 +372,18 @@ def get_mock_brand_output(idea, values):
     selected_tagline = f"Innovate for {values.split(',')[0]}."
 
     # This simulates the formatted output from the LLM
-    mock_output = f"""**1. Brand Name:** {selected_name}
-**Tagline:** {selected_tagline}
-**Tone/Meaning Explanation:** Combines '{name_idea}' (from your idea: {idea[:20]}...) and 'Sphere' (global, holistic), suggesting a brand focused on your values.
+    mock_output = f"""
+**1. Brand Name:** {selected_name}\n
+**Tagline:** {selected_tagline}\n
+**Tone/Meaning Explanation:** Combines '{name_idea}' (from your idea: {idea[:20]}...) and 'Sphere' (global, holistic), suggesting a brand focused on your values.\n
 
-**2. Brand Name:** TerraPact
-**Tagline:** Built on {values}.
-**Tone/Meaning Explanation:** 'Terra' (Earth) + 'Pact' (promise). A strong, trustworthy name that commits to its values, inspired by your idea: "{idea[:20]}...".
+**2. Brand Name:** TerraPact\n
+**Tagline:** Built on {values}.\n
+**Tone/Meaning Explanation:** 'Terra' (Earth) + 'Pact' (promise). A strong, trustworthy name that commits to its values, inspired by your idea: "{idea[:20]}...".\n
 
-**3. Brand Name:** Kinetix Core
-**Tagline:** The {values.split(' ')[-1]} of Motion.
-**Tone/Meaning Explanation:** 'Kinetix' (energy, movement) + 'Core' (central, essential). This name sounds innovative and fundamental, perfect for a tech-driven startup.
+**3. Brand Name:** Kinetix Core\n
+**Tagline:** The {values.split(' ')[-1]} of Motion.\n
+**Tone/Meaning Explanation:** 'Kinetix' (energy, movement) + 'Core' (central, essential). This name sounds innovative and fundamental, perfect for a tech-driven startup.\n
 
 ---
 
