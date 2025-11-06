@@ -52,7 +52,7 @@ APPLE_TAILWIND_CSS = """
         text-align: center;
     }
 
-    /* 3. Card/Navigation Styling (Minimalist) */
+    /* 3. Card/Navigation Styling (Minimalist) - Kept for future use if needed */
     .apple-card {
         background-color: #1a1a1a;
         border-radius: 12px;
@@ -68,19 +68,7 @@ APPLE_TAILWIND_CSS = """
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
     }
     
-    .apple-card h3 {
-        color: #FFFFFF;
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-
-    .apple-card p {
-        color: #AAAAAA;
-        font-size: 1rem;
-    }
-
-    /* 4. Button Styling (Clean and Rounded) */
+    /* 4. Default Button Styling (Pill shape) - Now used for nav */
     div.stButton > button {
         background-color: #1a1a1a; 
         color: #FFFFFF;
@@ -98,28 +86,42 @@ APPLE_TAILWIND_CSS = """
         border-color: #555555;
     }
     
-    /* 5. Custom style for 'Back to Home' link-button */
-    .back-link-container {
-        text-align: left; /* Align link to the left */
-        margin-bottom: 2rem; /* Add space below it */
+    /* 5. NEW Horizontal Navigation Bar */
+    .apple-nav-container {
+        width: 100%;
+        border-bottom: 1px solid #2a2a2a; /* Subtle separator */
+        margin-bottom: 3rem;
+        padding-bottom: 1rem;
     }
     
-    .back-link-container div.stButton > button {
+    /* Style for the buttons within the nav */
+    .apple-nav-container [data-testid="stButton"] > button {
         background: none !important;
         border: none !important;
-        color: #888888 !important; /* Grey link color */
-        padding: 0 !important;
-        font-size: 1rem;
+        color: #888888 !important; /* Inactive link color */
+        padding: 5px 10px !important;
+        font-size: 0.95rem; /* Slightly smaller */
         font-weight: 500;
-        text-align: left;
+        text-align: center;
+        width: 100%;
     }
-    
-    .back-link-container div.stButton > button:hover {
+
+    .apple-nav-container [data-testid="stButton"] > button:hover {
+        color: #FFFFFF !important; /* White on hover */
         background: none !important;
         border: none !important;
-        color: #FFFFFF !important; /* White hover color */
-        text-decoration: underline;
     }
+    
+    /* Style for the *active* link (which is just text) */
+    .apple-nav-active-link {
+        font-size: 0.95rem;
+        font-weight: 600; /* Bolder */
+        color: #FFFFFF !important; /* Active link color */
+        text-align: center;
+        padding: 5px 10px;
+        display: block; /* Ensure it takes space */
+    }
+
 
     /* Hide default Streamlit Chrome for a cleaner look */
     #MainMenu {visibility: hidden;}
@@ -152,101 +154,82 @@ def navigate_to(page_key):
     """Sets the current page in session state."""
     st.session_state.current_page = page_key
 
-def create_navigation_button():
-    """Renders the "Back to Home" link at the top of sub-pages."""
-    if st.session_state.current_page != PAGE_NAMES["Home"]:
-        st.markdown('<div class="back-link-container">', unsafe_allow_html=True)
-        # Use a specific key for the back button
-        if st.button("← Back to Home", key="btn_back_home"):
-            navigate_to(PAGE_NAMES["Home"])
-        st.markdown('</div>', unsafe_allow_html=True)
+def create_main_navbar():
+    """Creates the static horizontal navigation bar."""
+    st.markdown('<div class="apple-nav-container">', unsafe_allow_html=True)
+    cols = st.columns(6)
+    
+    page_keys = list(PAGE_NAMES.keys()) # ["Home", "Vision Pro", ...]
+    page_values = list(PAGE_NAMES.values()) # ["main_page", "page_a", ...]
+    
+    with cols[0]:
+        if st.session_state.current_page == page_values[0]:
+            st.markdown('<p class="apple-nav-active-link">Home</p>', unsafe_allow_html=True)
+        else:
+            if st.button(page_keys[0], key="nav_home"):
+                navigate_to(page_values[0])
+                st.rerun() # Use rerun for instant page switch
+    
+    with cols[1]:
+        if st.session_state.current_page == page_values[1]:
+            st.markdown(f'<p class="apple-nav-active-link">{page_keys[1]}</p>', unsafe_allow_html=True)
+        else:
+            if st.button(page_keys[1], key="nav_vision"):
+                navigate_to(page_values[1])
+                st.rerun()
+                
+    with cols[2]:
+        if st.session_state.current_page == page_values[2]:
+            st.markdown(f'<p class="apple-nav-active-link">{page_keys[2]}</p>', unsafe_allow_html=True)
+        else:
+            if st.button(page_keys[2], key="nav_mac"):
+                navigate_to(page_values[2])
+                st.rerun()
 
+    with cols[3]:
+        if st.session_state.current_page == page_values[3]:
+            st.markdown(f'<p class="apple-nav-active-link">{page_keys[3]}</p>', unsafe_allow_html=True)
+        else:
+            if st.button(page_keys[3], key="nav_iphone"):
+                navigate_to(page_values[3])
+                st.rerun()
+                
+    with cols[4]:
+        if st.session_state.current_page == page_values[4]:
+            st.markdown(f'<p class="apple-nav-active-link">{page_keys[4]}</p>', unsafe_allow_html=True)
+        else:
+            if st.button(page_keys[4], key="nav_watch"):
+                navigate_to(page_values[4])
+                st.rerun()
+                
+    with cols[5]:
+        if st.session_state.current_page == page_values[5]:
+            st.markdown(f'<p class="apple-nav-active-link">{page_keys[5]}</p>', unsafe_allow_html=True)
+        else:
+            if st.button(page_keys[5], key="nav_airpods"):
+                navigate_to(page_values[5])
+                st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 3. PAGE CONTENT FUNCTIONS ---
 
 def main_page():
-    """The main landing page with the hero section and navigation grid."""
+    """The main landing page with the hero section."""
+    create_main_navbar() # <-- ADDED
     st.markdown('<div class="apple-hero-title">Introducing a New Era of Innovation.</div>', unsafe_allow_html=True)
     st.markdown(
         '<p class="apple-hero-subtitle">Experience seamless integration, revolutionary performance, and timeless design across all our platforms.</p>',
         unsafe_allow_html=True
     )
-
-    st.markdown("---")
-    
-    # Use Streamlit columns for the grid layout
-    cols = st.columns(3)
-    
-    # Navigation Cards (Page A and B)
-    with cols[0]:
-        st.markdown(
-            f'<div class="apple-card" onclick="document.getElementById(\'nav-vision-pro\').click()"><h3>{list(PAGE_NAMES.keys())[1]}</h3><p>Spatial computing. Now available.</p></div>',
-            unsafe_allow_html=True
-        )
-        # Wrap the functional button in a hidden div to ensure reliable navigation without visual clutter
-        st.markdown('<div style="display: none;">', unsafe_allow_html=True)
-        if st.button("Navigate to Vision Pro", key="nav-vision-pro"):
-            navigate_to(PAGE_NAMES["Vision Pro"])
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with cols[1]:
-        st.markdown(
-            f'<div class="apple-card" onclick="document.getElementById(\'nav-macbook\').click()"><h3>{list(PAGE_NAMES.keys())[2]}</h3><p>M4 Pro. Unleash Pro performance.</p></div>',
-            unsafe_allow_html=True
-        )
-        st.markdown('<div style="display: none;">', unsafe_allow_html=True)
-        if st.button("Navigate to MacBook", key="nav-macbook"):
-            navigate_to(PAGE_NAMES["MacBook"])
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with cols[2]:
-        st.markdown(
-            f'<div class="apple-card" onclick="document.getElementById(\'nav-iphone\').click()"><h3>{list(PAGE_NAMES.keys())[3]}</h3><p>Capture. Create. Connect. Better.</p></div>',
-            unsafe_allow_html=True
-        )
-        st.markdown('<div style="display: none;">', unsafe_allow_html=True)
-        if st.button("Navigate to iPhone 16", key="nav-iphone"):
-            navigate_to(PAGE_NAMES["iPhone 16"])
-        st.markdown('</div>', unsafe_allow_html=True)
-            
-    # Navigation Cards (Page D and E)
-    cols = st.columns(3)
-    
-    with cols[0]:
-        st.markdown(
-            f'<div class="apple-card" onclick="document.getElementById(\'nav-watch\').click()"><h3>{list(PAGE_NAMES.keys())[4]}</h3><p>The future of health is on your wrist.</p></div>',
-            unsafe_allow_html=True
-        )
-        st.markdown('<div style="display: none;">', unsafe_allow_html=True)
-        if st.button("Navigate to Watch X", key="nav-watch"):
-            navigate_to(PAGE_NAMES["Watch X"])
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with cols[1]:
-        st.markdown(
-            f'<div class="apple-card" onclick="document.getElementById(\'nav-airpods\').click()"><h3>{list(PAGE_NAMES.keys())[5]}</h3><p>Redesigned for pure, immersive audio.</p></div>',
-            unsafe_allow_html=True
-        )
-        st.markdown('<div style="display: none;">', unsafe_allow_html=True)
-        if st.button("Navigate to AirPods Max", key="nav-airpods"):
-            navigate_to(PAGE_NAMES["AirPods Max"])
-        st.markdown('</div>', unsafe_allow_html=True)
-            
-    # Empty column for alignment
-    with cols[2]:
-        st.markdown(
-            '<div class="apple-card" style="opacity: 0.2; cursor: default;"><h3>More Coming Soon</h3><p>Stay tuned for our next groundbreaking product.</p></div>',
-            unsafe_allow_html=True
-        )
-
-    # REMOVED the problematic global CSS block that hid all buttons.
+    # --- All card navigation removed ---
 
 
 def page_a():
     """Vision Pro Page"""
-    create_navigation_button() # <-- MOVED TO TOP
+    create_main_navbar() # <-- ADDED
     st.markdown('<h1 class="apple-page-title">Apple Vision Pro</h1>', unsafe_allow_html=True)
-    ## st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=Vision+Pro+Demo", use_column_width=True)
+    # st.image(...) <-- REMOVED
     st.markdown("## Spatial Computing is Here.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -259,14 +242,13 @@ def page_a():
             <li>**3D Camera:** Capture spatial photos and videos.</li>
         </ul>
     """, unsafe_allow_html=True)
-    # create_navigation_button() <-- REMOVED FROM BOTTOM
 
 
 def page_b():
     """MacBook Page"""
-    create_navigation_button() # <-- MOVED TO TOP
+    create_main_navbar() # <-- ADDED
     st.markdown('<h1 class="apple-page-title">MacBook Pro M4</h1>', unsafe_allow_html=True)
-    ## st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=MacBook+Pro+M4", use_column_width=True)
+    # st.image(...) <-- REMOVED
     st.markdown("## Power. Efficiency. Pro.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -279,13 +261,13 @@ def page_b():
             <li>**Up to 22 Hours:** Unprecedented battery life on a single charge.</li>
         </ul>
     """, unsafe_allow_html=True)
-    # create_navigation_button() <-- REMOVED FROM BOTTOM
+
 
 def page_c():
     """iPhone 16 Page"""
-    create_navigation_button() # <-- MOVED TO TOP
+    create_main_navbar() # <-- ADDED
     st.markdown('<h1 class="apple-page-title">iPhone 16 Pro</h1>', unsafe_allow_html=True)
-    ## st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=iPhone+16+Pro", use_column_width=True)
+    # st.image(...) <-- REMOVED
     st.markdown("## A Giant Leap for Photography.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -298,13 +280,13 @@ def page_c():
             <li>**48MP Main Camera:** Unrivaled low-light performance.</li>
         </ul>
     """, unsafe_allow_html=True)
-    # create_navigation_button() <-- REMOVED FROM BOTTOM
+
 
 def page_d():
     """Watch X Page"""
-    create_navigation_button() # <-- MOVED TO TOP
+    create_main_navbar() # <-- ADDED
     st.markdown('<h1 class="apple-page-title">Apple Watch X</h1>', unsafe_allow_html=True)
-    st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=Apple+Watch+X", use_column_width=True)
+    # st.image(...) <-- REMOVED
     st.markdown("## Reimagined. Revolutionary.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -314,16 +296,16 @@ def page_d():
         <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
             <li>**S10 Chip:** Faster, more efficient processing.</li>
             <li>**Blood Glucose Monitoring:** Non-invasive monitoring capability.</li>
-            <li>**New Health Sensors:** Advanced crash and fall detection.</li>
+            <li>**New Health Sensors:** Advanced crash-detection.</li>
         </ul>
     """, unsafe_allow_html=True)
-    # create_navigation_button() <-- REMOVED FROM BOTTOM
+
     
 def page_e():
     """AirPods Max Page"""
-    create_navigation_button() # <-- MOVED TO TOP
+    create_main_navbar() # <-- ADDED
     st.markdown('<h1 class="apple-page-title">AirPods Max (Gen 2)</h1>', unsafe_allow_html=True)
-    st.image("https://placehold.co/1000x500/0A0A0A/E0E0E0?text=AirPods+Max+Gen+2", use_column_width=True)
+    # st.image(...) <-- REMOVED
     st.markdown("## Audio Purity. Redefined.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -336,7 +318,6 @@ def page_e():
             <li>**New Carrying Case:** Ultra-low power mode for extended standby.</li>
         </ul>
     """, unsafe_allow_html=True)
-    # create_navigation_button() <-- REMOVED FROM BOTTOM
 
 
 # --- 4. MAIN APPLICATION LOGIC ---
