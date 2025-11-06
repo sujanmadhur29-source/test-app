@@ -1,231 +1,333 @@
 # app.py
 import streamlit as st
-import streamlit.components.v1 as components
 
+# --- Page config ---
 st.set_page_config(page_title="Apple-Inspired Streamlit App", page_icon="🍎", layout="wide")
-# avoid Streamlit default header spacing
-st.title("")
 
-# read query param for routing
-params = st.experimental_get_query_params()
-page = params.get("page", ["0"])[0]
+# --- Session defaults ---
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+if "theme" not in st.session_state:
+    st.session_state.theme = "light"  # 'light' or 'dark'
 
-# ------------------------------------------------------------------
-# HTML/CSS/JS to inject. This block includes:
-# - styles
-# - theme toggle (localStorage)
-# - auto-resize script that posts height to parent
-# - fallback internal scrolling if parent doesn't accept resize
-# ------------------------------------------------------------------
-base_html = r"""
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<link href="https://unpkg.com/lucide-static@latest/font/lucide.css" rel="stylesheet">
+# Helper to navigate
+def navigate(p):
+    st.session_state.page = p
 
+# --- Minimal CSS (Apple-ish) injected natively ---
+# We keep CSS minimal and scoped to avoid interfering with Streamlit internals.
+base_css = f"""
 <style>
-  :root { --bg-light: linear-gradient(to bottom right,#f9fafb,#ffffff); --bg-dark: linear-gradient(to bottom right,#0b1220,#111827); }
-  html,body { height: 100%; margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  [data-theme='light'] { background: var(--bg-light); color: #0f172a; }
-  [data-theme='dark'] { background: var(--bg-dark); color: #e6eef8; }
+:root {{
+  --bg-light: #f7f8fa;
+  --bg-dark: #0f1724;
+  --card-light: rgba(255,255,255,0.95);
+  --card-dark: rgba(17,24,39,0.88);
+  --muted-light: #6b7280;
+  --muted-dark: #9ca3af;
+  --accent: #0b69ff;
+  --radius: 14px;
+  --glass: rgba(255,255,255,0.6);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}}
 
-  /* outer wrapper that we ask Streamlit to size to content */
-  .app-shell { box-sizing: border-box; padding: 20px 32px; width: 100%; display: block; }
+/* Theme */
+[data-theme="light"] .stApp {{
+  background: linear-gradient(180deg, var(--bg-light), #ffffff);
+  color: #0f1724;
+}}
+[data-theme="dark"] .stApp {{
+  background: linear-gradient(180deg, #041026, var(--bg-dark));
+  color: #e6eef8;
+}}
 
-  /* If parent doesn't allow dynamic resize, .inner-scroll will handle internal scroll */
-  .inner-scroll { max-height: 100vh; overflow: auto; padding-bottom: 28px; box-sizing: border-box; }
+/* Top nav */
+.app-header {{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:18px 22px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}}
+.brand {{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:20px;
+  font-weight:700;
+}}
+.brand .logo {{
+  display:inline-flex;
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+}}
 
-  .nav { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
-  .brand { display:flex; align-items:center; gap:10px; font-weight:600; font-size:18px; }
-  .nav-buttons { display:flex; gap:8px; align-items:center; }
-  .nav-button { background: rgba(255,255,255,0.75); border-radius:12px; padding:8px 12px; cursor:pointer; border:0; font-weight:500; transition: transform 180ms ease, background 180ms ease; }
-  [data-theme='dark'] .nav-button { background: rgba(255,255,255,0.06); color: #e6eef8; }
-  .nav-button:hover { transform: translateY(-3px); }
+/* Nav buttons */
+.nav-row {{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}}
+.nav-btn {{
+  background:var(--card-light);
+  border-radius: 10px;
+  padding:8px 12px;
+  font-weight:600;
+  border: none;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+}}
+[data-theme="dark"] .nav-btn {{ background: var(--card-dark); }}
+.nav-btn:hover {{ transform: translateY(-3px); box-shadow: 0 10px 30px rgba(2,6,23,0.08); }}
 
-  .toggle-btn { cursor:pointer; padding:6px; border-radius:10px; }
+/* Page container: fixed min height reduces jumps when content changes */
+.page-container {{
+  min-height: 640px;     /* <-- important: prevents container jumps across pages */
+  padding: 22px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}}
 
-  .grid { display:grid; grid-template-columns: repeat(1, minmax(0,1fr)); gap:18px; }
-  @media(min-width:768px){ .grid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+/* Cards grid */
+.cards {{
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr;
+}}
+@media(min-width:900px) {{
+  .cards {{ grid-template-columns: repeat(3, 1fr); }}
+}}
+.card {{
+  background: var(--card-light);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.06);
+  transition: transform .16s ease, box-shadow .16s ease;
+  min-height: 120px;
+}}
+[data-theme="dark"] .card {{ background: var(--card-dark); box-shadow: 0 8px 24px rgba(0,0,0,0.6); }}
+.card:hover {{ transform: translateY(-6px); box-shadow: 0 18px 52px rgba(2,6,23,0.12); }}
+.card-title {{ font-size:18px; font-weight:700; margin-bottom:8px; }}
+.card-desc {{ color: var(--muted-light); }}
+[data-theme="dark"] .card-desc {{ color: var(--muted-dark); }}
 
-  .apple-card {
-    background: rgba(255,255,255,0.85);
-    border-radius:16px;
-    padding:22px;
-    box-shadow: 0 10px 30px rgba(2,6,23,0.06);
-    transition: transform .25s ease, box-shadow .25s ease;
-    min-height:120px;
-  }
-  [data-theme='dark'] .apple-card {
-    background: rgba(17,24,39,0.85);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-  }
-  .apple-card:hover { transform: translateY(-6px); box-shadow: 0 18px 50px rgba(2,6,23,0.12); }
+/* small utility */
+.kv-row {{ display:flex; align-items:center; gap:8px; margin-top:8px; }}
+.btn-link {{
+  color: var(--accent);
+  font-weight:700;
+  text-decoration: none;
+}}
+.small-muted {{ color: var(--muted-light); font-size:13px; }}
+[data-theme="dark"] .small-muted {{ color: var(--muted-dark); }}
 
-  .card-title { font-size:18px; font-weight:600; margin-bottom:8px; }
-  .card-body { color: #6b7280; }
-  [data-theme='dark'] .card-body { color: #9ca3af; }
-  .link { display:inline-block; margin-top:10px; color:#0066ff; font-weight:600; text-decoration:none; }
-  [data-theme='dark'] .link { color:#66a3ff; }
+/* Sidebar tweaks */
+[data-testid="stSidebar"] {{
+  border-radius: 12px;
+}}
 
-  .page-wrap { margin-top:10px; padding:18px; border-radius:12px; background:transparent; }
-  .page-title { font-size:28px; font-weight:700; margin-bottom:8px; }
-  .page-desc { color:#6b7280; margin-bottom:12px; }
-  [data-theme='dark'] .page-desc { color:#cbd5e1; }
-
-  .center { text-align:center; }
-  .fade { animation: fadeIn .45s ease both; }
-  @keyframes fadeIn { from { opacity:0; transform: translateY(8px);} to { opacity:1; transform: translateY(0);} }
+/* make Streamlit's main container use our theme attribute */
 </style>
+"""
 
+# Inject CSS and set theme attribute on document root via a tiny script
+# Using st.markdown unsafe HTML to set data-theme on top-level element.
+theme_script = f"""
 <script>
-  // Theme persistence logic
-  function setTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem('theme', theme); } catch (e) {}
-  }
-  function toggleTheme() {
-    const cur = document.documentElement.getAttribute('data-theme') || 'light';
-    setTheme(cur === 'dark' ? 'light' : 'dark');
-    // After toggling theme, recompute and send new height
-    setTimeout(postHeightToParent, 120);
-  }
-  document.addEventListener('DOMContentLoaded', function() {
-    const saved = localStorage.getItem('theme') || 'light';
-    setTheme(saved);
-    // Initial post of height after DOM loaded
-    setTimeout(postHeightToParent, 120);
-  });
-
-  // Auto-resize: compute document height and post message to parent to request frame height update.
-  function getDocHeight() {
-    const body = document.body;
-    const html = document.documentElement;
-    return Math.max(
-      body.scrollHeight, body.offsetHeight,
-      html.clientHeight, html.scrollHeight, html.offsetHeight
-    );
-  }
-
-  function postHeightToParent() {
-    const h = getDocHeight();
-    // Streamlit listens to a special message type for resizing: setFrameHeight
-    // We attempt both known patterns for compatibility.
-    try {
-      // Preferred: Streamlit's internal receiver
-      window.parent.postMessage({isStreamlitMessage: true, type: 'setFrameHeight', height: h}, '*');
-    } catch (e) {
-      // fallback general message
-      window.parent.postMessage({type: 'setFrameHeight', height: h}, '*');
-    }
-  }
-
-  // Observe DOM changes and post updated height (handles navigation content changes)
-  const observer = new MutationObserver(function() {
-    postHeightToParent();
-  });
-  observer.observe(document.documentElement || document.body, { childList: true, subtree: true, characterData: true });
-
-  // Also post height on window resize (responsive)
-  window.addEventListener('resize', function() {
-    setTimeout(postHeightToParent, 80);
-  });
+const theme = "{st.session_state.theme}";
+document.documentElement.setAttribute('data-theme', theme);
 </script>
 """
 
-# Helper functions to build inner HTML blocks
-def render_nav():
-    return """
-    <div class="nav">
-      <div class="brand"><i class="lucide lucide-apple" style="font-size:20px;"></i><span>Streamlit OS</span></div>
-      <div class="nav-buttons">
-        <button class="nav-button" onclick="window.location.href='?page=0'"><i class="lucide lucide-home"></i>&nbsp;Home</button>
-        <button class="nav-button" onclick="window.location.href='?page=1'"><i class="lucide lucide-monitor"></i>&nbsp;Page 1</button>
-        <button class="nav-button" onclick="window.location.href='?page=2'"><i class="lucide lucide-bar-chart"></i>&nbsp;Page 2</button>
-        <button class="nav-button" onclick="window.location.href='?page=3'"><i class="lucide lucide-file-text"></i>&nbsp;Page 3</button>
-        <button class="nav-button" onclick="window.location.href='?page=4'"><i class="lucide lucide-users"></i>&nbsp;Page 4</button>
-        <button class="nav-button" onclick="window.location.href='?page=5'"><i class="lucide lucide-settings"></i>&nbsp;Page 5</button>
-      </div>
-      <div class="toggle-btn" title="Toggle theme" onclick="toggleTheme()">
-        <i class="lucide lucide-sun" style="font-size:18px;"></i>
-      </div>
-    </div>
-    """
+# Render CSS + script
+st.markdown(base_css + theme_script, unsafe_allow_html=True)
 
-def render_home_cards():
-    return """
-    <div class="grid">
-      <div class="apple-card fade">
-        <div class="card-title">Page 1 — Overview</div>
-        <div class="card-body">Intro, value proposition and product highlights.</div>
-        <a class="link" href="?page=1">Open →</a>
-      </div>
+# --- Header with native Streamlit layout (columns) ---
+with st.container():
+    cols = st.columns([1, 3, 1])
+    with cols[0]:
+        # Brand area
+        st.markdown(
+            """
+            <div class="app-header">
+              <div class="brand">
+                <div class="logo">🍎</div>
+                <div>
+                  <div style="font-weight:700;">Streamlit OS</div>
+                  <div style="font-size:12px;color:gray;margin-top:2px;">Apple-inspired UI</div>
+                </div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with cols[1]:
+        # Centered nav buttons (native Streamlit buttons)
+        nav_col1, nav_col2 = st.columns([1, 1])
+        # We'll render as buttons using st.button so clicks are native and predictable.
+        # Using forms would be overkill; st.button updates session_state on click.
+        nav_buttons = st.container()
+        # Create a row of buttons with consistent styles using HTML-wrapped buttons that trigger query param navigation.
+        # But to keep everything native, use st.button in a single row via columns:
+        bcols = st.columns([1,1,1,1,1,1])
+        if bcols[0].button("Home"):
+            navigate("home")
+        if bcols[1].button("Page 1"):
+            navigate("page1")
+        if bcols[2].button("Page 2"):
+            navigate("page2")
+        if bcols[3].button("Page 3"):
+            navigate("page3")
+        if bcols[4].button("Page 4"):
+            navigate("page4")
+        if bcols[5].button("Page 5"):
+            navigate("page5")
+    with cols[2]:
+        # Theme toggle (native)
+        tcol1, tcol2 = st.columns([2,1])
+        with tcol1:
+            # small label to indicate theme mode
+            if st.session_state.theme == "light":
+                st.write("")  # spacing
+            else:
+                st.write("")
+        with tcol2:
+            # Theme switch: checkbox toggles theme
+            new_theme = st.toggle("Dark mode", value=(st.session_state.theme == "dark"))
+            # If toggle changed, update session_state and rerun to apply new CSS attribute
+            if new_theme and st.session_state.theme != "dark":
+                st.session_state.theme = "dark"
+                st.experimental_rerun()
+            if not new_theme and st.session_state.theme != "light":
+                st.session_state.theme = "light"
+                st.experimental_rerun()
 
-      <div class="apple-card fade">
-        <div class="card-title">Page 2 — Analytics</div>
-        <div class="card-body">Dashboards, charts and KPIs.</div>
-        <a class="link" href="?page=2">Open →</a>
-      </div>
+# --- Page Rendering: native Streamlit controls only ---
+# Wrap page content in a container with class `page-container` (applies min-height)
+page_container = st.container()
+with page_container:
+    st.markdown('<div class="page-container">', unsafe_allow_html=True)
 
-      <div class="apple-card fade">
-        <div class="card-title">Page 3 — Reports</div>
-        <div class="card-body">Exportable reports & tables.</div>
-        <a class="link" href="?page=3">Open →</a>
-      </div>
+    if st.session_state.page == "home":
+        st.markdown("<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;'>"
+                    "<div style=''>"
+                    "<h1 style='margin:0 0 4px 0;'>🍎 Welcome to Streamlit OS</h1>"
+                    "<div class='small-muted'>Apple-inspired multiplatform UI — native Streamlit layout.</div>"
+                    "</div>"
+                    "</div>",
+                    unsafe_allow_html=True)
 
-      <div class="apple-card fade">
-        <div class="card-title">Page 4 — Collaboration</div>
-        <div class="card-body">Team boards, comments and shared views.</div>
-        <a class="link" href="?page=4">Open →</a>
-      </div>
+        # Cards grid implemented with native columns to avoid HTML layout issues.
+        # We'll render 3 columns per row on wide screens using Streamlit columns.
+        # For responsiveness, use width-based column creation.
+        # Build cards as st.markdown blocks (still native).
+        cards = [
+            ("Page 1 — Overview", "Intro, value proposition and product highlights.", "page1"),
+            ("Page 2 — Analytics", "Dashboards, charts and KPIs.", "page2"),
+            ("Page 3 — Reports", "Exportable reports & tables.", "page3"),
+            ("Page 4 — Collaboration", "Team boards, comments and shared views.", "page4"),
+            ("Page 5 — Settings", "Profile, preferences and integrations.", "page5"),
+        ]
 
-      <div class="apple-card fade">
-        <div class="card-title">Page 5 — Settings</div>
-        <div class="card-body">Profile, preferences and integrations.</div>
-        <a class="link" href="?page=5">Open →</a>
-      </div>
-    </div>
-    """
+        # Render 3-per-row responsive-ish using columns
+        cols_per_row = 3
+        for i in range(0, len(cards), cols_per_row):
+            row = cards[i : i + cols_per_row]
+            cols = st.columns(len(row))
+            for c, card in zip(cols, row):
+                title, desc, key = card
+                with c:
+                    st.markdown(f"""
+                    <div class="card">
+                      <div class="card-title">{title}</div>
+                      <div class="card-desc">{desc}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    # native navigation button under the card
+                    if st.button("Open", key=f"open_{key}"):
+                        navigate(key)
 
-def render_page(title, desc):
-    # note: Back link updates query param and causes Streamlit rerun
-    return f"""
-    <div class="page-wrap fade">
-      <div class="page-title">{title}</div>
-      <div class="page-desc">{desc}</div>
-      <a class="link" href="?page=0">← Back to Home</a>
-    </div>
-    """
+    elif st.session_state.page == "page1":
+        st.header("Page 1 — Overview")
+        st.write("This page contains an overview of the product, value proposition, and primary features.")
+        st.markdown("---")
+        st.subheader("Highlights")
+        st.write("- Clean minimal design inspired by Apple")
+        st.write("- Focus on whitespace, typography, and smooth micro-interactions")
+        st.markdown('<div style="margin-top:12px;"><button class="nav-btn" onclick="document.location=\'\'"> </button></div>', unsafe_allow_html=True)
+        if st.button("← Back to Home"):
+            navigate("home")
 
-# Build final HTML:
-# We place content inside .inner-scroll so that if the host refuses dynamic resizing,
-# the inner area will scroll without causing Streamlit layout jumps.
-html_parts = [
-    base_html,
-    '<div class="app-shell">',
-    '<div class="inner-scroll">',  # inner scroll container (fallback)
-    render_nav()
-]
+    elif st.session_state.page == "page2":
+        st.header("Page 2 — Analytics")
+        st.write("Interactive analytics. Below is a sample chart created natively using Altair for smooth integration.")
+        # Example: sample Altair chart (native)
+        import pandas as pd
+        import altair as alt
+        df = pd.DataFrame({
+            "month": ["Jan","Feb","Mar","Apr","May","Jun"],
+            "value": [10, 15, 9, 20, 23, 18]
+        })
+        chart = alt.Chart(df).mark_line(point=True).encode(
+            x="month",
+            y="value"
+        ).properties(width="container", height=360)
+        st.altair_chart(chart, use_container_width=True)
+        st.markdown("")
+        if st.button("← Back to Home"):
+            navigate("home")
 
-if page == "0":
-    html_parts.append('<div class="center"><h1 style="font-size:36px;margin-bottom:6px;">🍎 Welcome to Streamlit OS</h1>')
-    html_parts.append('<p style="color:#6b7280;margin-bottom:16px;">Apple-inspired multipage UI — Tailwind + Lucide icons.</p></div>')
-    html_parts.append(render_home_cards())
-elif page == "1":
-    html_parts.append(render_page("Page 1 — Overview", "Overview, features and product description."))
-elif page == "2":
-    html_parts.append(render_page("Page 2 — Analytics", "Interactive charts (you can embed Altair/Plotly here)."))
-elif page == "3":
-    html_parts.append(render_page("Page 3 — Reports", "Downloadable reports and export options."))
-elif page == "4":
-    html_parts.append(render_page("Page 4 — Collaboration", "Team tools, shared spaces and comments."))
-elif page == "5":
-    html_parts.append(render_page("Page 5 — Settings", "Preferences, theming and account settings."))
-else:
-    html_parts.append(render_page("Page not found", "Invalid page parameter — returning to Home."))
+    elif st.session_state.page == "page3":
+        st.header("Page 3 — Reports")
+        st.write("Downloadable reports and export options.")
+        st.markdown("### Sample table")
+        import pandas as pd
+        df = pd.DataFrame({
+            "Name": ["Alice","Bob","Charlie"],
+            "Metric A": [12, 9, 14],
+            "Metric B": [7, 11, 5]
+        })
+        st.dataframe(df, use_container_width=True, height=240)
+        st.markdown("")
+        if st.button("← Back to Home"):
+            navigate("home")
 
-html_parts.append('</div>')  # close inner-scroll
-html_parts.append('</div>')  # close app-shell
-final_html = "\n".join(html_parts)
+    elif st.session_state.page == "page4":
+        st.header("Page 4 — Collaboration")
+        st.write("Team tools: comments, shared boards, and simple message area implemented with native widgets.")
+        st.text_input("Post a quick note", key="collab_note")
+        if st.button("Save Note"):
+            st.success("Note saved (session-only)")
+        st.markdown("")
+        if st.button("← Back to Home"):
+            navigate("home")
 
-# Render with components.html
-# Height: we set a reasonably large default height; the embedded script will attempt to resize it to exact content height.
-# If resizing is not accepted by the host, the inner-scroll area will provide internal scrolling and stop Streamlit layout jumps.
-components.html(final_html, height=900, scrolling=True)
+    elif st.session_state.page == "page5":
+        st.header("Page 5 — Settings")
+        st.write("User preferences and integrations.")
+        # native theme selector here, mirrors top toggle
+        theme_sel = st.radio("Select theme (native)", options=["light", "dark"], index=0 if st.session_state.theme=="light" else 1)
+        if theme_sel != st.session_state.theme:
+            st.session_state.theme = theme_sel
+            st.experimental_rerun()
+        st.markdown("")
+        if st.button("← Back to Home"):
+            navigate("home")
+
+    else:
+        st.info("Page not found — returning home.")
+        if st.button("Return to home"):
+            navigate("home")
+
+    st.markdown("</div>", unsafe_allow_html=True)  # close page-container
+
+# --- Footer (keeps consistent height footprint) ---
+with st.container():
+    st.markdown("""<div style="margin-top:6px; padding:10px 6px; font-size:13px; color:gray;">Made with ❤️ — Streamlit native layout (no iframe)</div>""", unsafe_allow_html=True)
