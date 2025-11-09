@@ -256,7 +256,7 @@ PAGE_NAMES = {
     "Target Lens": "page_b", # Renamed from "MacBook"
     "Market Radar": "page_c", # Renamed from "iPhone 16"
     "Roadmap": "page_d", # Renamed from "Watch X"
-    "AirPods Max": "page_e",
+    "Pricing": "page_e", # Renamed from "AirPods Max"
 }
 
 # Initialize session state for page management
@@ -334,14 +334,14 @@ def main_page():
     # --- New Input Form ---
     with st.form(key="brand_form"):
         idea = st.text_area(
-            "What idea do you have in mind?", 
-            placeholder="What is your product or service? What makes your product unique? How will you sell it?",
+            "What is your product or service? What makes your product unique? How will you sell it?", 
+            placeholder="What idea do you have in mind?",
             height=100
         )
         # Updated this section as requested
         launch_plan = st.text_area(
-            "What are your thoughts on a launch plan?", 
-            placeholder="Where are you launching first? Who is your ideal customer? Any constraints?",
+            "Where are you launching first? Who is your ideal customer? Any constraints?", 
+            placeholder="What are your thoughts on a launch plan?",
             height=100
         )
         
@@ -357,7 +357,7 @@ def main_page():
                 st.session_state.startup_idea = idea
                 st.session_state.startup_launch_plan = launch_plan # Updated state variable
                 st.session_state.generating = True # Flag to show spinner on next page
-                navigate_to(PAGE_NAMES["Branding"]) # Navigate to new page name
+                navigate_to(PAGE_NAMES["Segment View"]) # FIXED: Was "Branding"
                 st.rerun()
 
 
@@ -448,10 +448,6 @@ def page_a():
         st.markdown('<h1 class="apple-page-title">Segment View</h1>', unsafe_allow_html=True)
         st.markdown("## Define Your Identity.")
         st.markdown("""
-            <p style="font-size: 1.1rem; color: #E0E0E0;">
-            This is where your brand comes to life. A strong brand identity seamlessly blends your mission
-            with your values, creating a memorable experience for your audience.
-            </p>
             <p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;">
             <i>To generate a brand identity, please return to the <b>Home</b> page and fill out the form.</i>
             </p>
@@ -513,9 +509,9 @@ def page_d():
 
     
 def page_e():
-    """AirPods Max Page"""
+    """Pricing Page"""
     create_main_navbar()
-    st.markdown('<h1 class="apple-page-title">AirPods Max (Gen 2)</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="apple-page-title">Pricing</h1>', unsafe_allow_html=True)
     st.markdown("## Audio Purity. Redefined.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -538,7 +534,7 @@ page_functions = {
     PAGE_NAMES["Target Lens"]: page_b, # Updated
     PAGE_NAMES["Market Radar"]: page_c, # Updated
     PAGE_NAMES["Roadmap"]: page_d, # Updated
-    PAGE_NAMES["AirPods Max"]: page_e,
+    PAGE_NAMES["Pricing"]: page_e, # Updated
 }
 
 # Execute the function corresponding to the current page state
