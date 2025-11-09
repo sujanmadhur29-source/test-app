@@ -252,10 +252,10 @@ st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
 
 PAGE_NAMES = {
     "Home": "main_page",
-    "Branding": "page_a", # Renamed from "Vision Pro"
-    "MacBook": "page_b",
-    "iPhone 16": "page_c",
-    "Watch X": "page_d",
+    "Segment View": "page_a", # Renamed from "Branding"
+    "Target Lens": "page_b", # Renamed from "MacBook"
+    "Market Radar": "page_c", # Renamed from "iPhone 16"
+    "Roadmap": "page_d", # Renamed from "Watch X"
     "AirPods Max": "page_e",
 }
 
@@ -290,7 +290,7 @@ def create_main_navbar():
     
     with cols[1]:
         is_active = st.session_state.current_page == page_values[1]
-        if st.button(page_keys[1], key="nav_branding", disabled=is_active): # Updated key
+        if st.button(page_keys[1], key="nav_branding", disabled=is_active): # Updated key (key name is internal, fine to keep)
             navigate_to(page_values[1])
             st.rerun()
                 
@@ -402,7 +402,7 @@ def get_mock_brand_output(idea, launch_plan):
 
 
 def page_a():
-    """Branding Page / Brand Output Page"""
+    """Segment View Page / Brand Output Page"""
     create_main_navbar()
     
     # Check if we landed here from the form
@@ -445,7 +445,7 @@ def page_a():
         
     else:
         # Original "Branding" page content (was "Vision Pro")
-        st.markdown('<h1 class="apple-page-title">Branding</h1>', unsafe_allow_html=True)
+        st.markdown('<h1 class="apple-page-title">Segment View</h1>', unsafe_allow_html=True)
         st.markdown("## Define Your Identity.")
         st.markdown("""
             <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -459,9 +459,9 @@ def page_a():
 
 
 def page_b():
-    """MacBook Page"""
+    """Target Lens Page"""
     create_main_navbar()
-    st.markdown('<h1 class="apple-page-title">MacBook Pro M4</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="apple-page-title">Target Lens</h1>', unsafe_allow_html=True)
     st.markdown("## Power. Efficiency. Pro.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -477,9 +477,9 @@ def page_b():
 
 
 def page_c():
-    """iPhone 16 Page"""
+    """Market Radar Page"""
     create_main_navbar()
-    st.markdown('<h1 class="apple-page-title">iPhone 16 Pro</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="apple-page-title">Market Radar</h1>', unsafe_allow_html=True)
     st.markdown("## A Giant Leap for Photography.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -495,9 +495,9 @@ def page_c():
 
 
 def page_d():
-    """Watch X Page"""
+    """Roadmap Page"""
     create_main_navbar()
-    st.markdown('<h1 class="apple-page-title">Apple Watch X</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="apple-page-title">Roadmap</h1>', unsafe_allow_html=True)
     st.markdown("## Reimagined. Revolutionary.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -534,10 +534,10 @@ def page_e():
 
 page_functions = {
     PAGE_NAMES["Home"]: main_page,
-    PAGE_NAMES["Branding"]: page_a, # Updated
-    PAGE_NAMES["MacBook"]: page_b,
-    PAGE_NAMES["iPhone 16"]: page_c,
-    PAGE_NAMES["Watch X"]: page_d,
+    PAGE_NAMES["Segment View"]: page_a, # Updated
+    PAGE_NAMES["Target Lens"]: page_b, # Updated
+    PAGE_NAMES["Market Radar"]: page_c, # Updated
+    PAGE_NAMES["Roadmap"]: page_d, # Updated
     PAGE_NAMES["AirPods Max"]: page_e,
 }
 
