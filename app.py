@@ -139,6 +139,14 @@ APPLE_TAILWIND_CSS = """
         min-height: 100px; /* Specific to text area */
     }
 
+    /* NEW: Style for placeholders */
+    [data-testid="stTextInput"] > div > div > input::placeholder,
+    [data-testid="stTextArea"] > div > div > textarea::placeholder {
+        color: #777777;
+        font-size: 0.9rem;
+        font-style: italic;
+    }
+
     /* Style for text input labels */
     [data-testid="stTextInput"] label,
     [data-testid="stTextArea"] label {
@@ -334,14 +342,14 @@ def main_page():
     # --- New Input Form ---
     with st.form(key="brand_form"):
         idea = st.text_area(
-            "What is your product or service? What makes your product unique? How will you sell it?", 
-            placeholder="What idea do you have in mind?",
+            "What idea do you have in mind?", 
+            placeholder="What is your product or service? What makes your product unique? How will you sell it?",
             height=100
         )
         # Updated this section as requested
         launch_plan = st.text_area(
-            "Where are you launching first? Who is your ideal customer? Any constraints?", 
-            placeholder="What are your thoughts on a launch plan?",
+            "What are your thoughts on a launch plan?", 
+            placeholder="Where are you launching first? Who is your ideal customer? Any constraints?",
             height=100
         )
         
