@@ -335,16 +335,14 @@ def main_page():
     with st.form(key="brand_form"):
         idea = st.text_area(
             "What idea do you have in mind?", 
-            placeholder="e.g., A subscription service for AI-powered coding tutors",
-            height=100,
-            help="What is your product or service? What makes your product unique? How will you sell it?"
+            placeholder="What is your product or service? What makes your product unique? How will you sell it?",
+            height=100
         )
         # Updated this section as requested
         launch_plan = st.text_area(
             "What are your thoughts on a launch plan?", 
-            placeholder="e.g., Starting with a beta in New York for tech startups.",
-            height=100,
-            help="Where are you launching first? Who is your ideal customer? Any constraints?"
+            placeholder="Where are you launching first? Who is your ideal customer? Any constraints?",
+            height=100
         )
         
         # Center the button
