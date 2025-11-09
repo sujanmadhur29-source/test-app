@@ -255,10 +255,8 @@ APPLE_TAILWIND_CSS = """
         border-bottom: 1px solid #333; /* Cell borders */
         padding: 0.75rem 1rem; /* Spacing */
         color: #E0E0E0;
-        white-space: normal; /* CHANGED: Allow text to wrap */
-        word-break: break-word; /* ADDED: Force long words to break */
+        white-space: nowrap; /* CHANGED: Prevents text from wrapping and breaking layout */
         border-left: 1px solid #333;
-        min-width: 150px; /* ADDED: Give columns a reasonable minimum width */
     }
     
     .brand-output-section td:first-child,
