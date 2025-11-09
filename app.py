@@ -264,8 +264,9 @@ if 'current_page' not in st.session_state:
     st.session_state.current_page = PAGE_NAMES["Home"]
 if 'startup_idea' not in st.session_state:
     st.session_state.startup_idea = None
-if 'startup_values' not in st.session_state:
-    st.session_state.startup_values = None
+# Renamed startup_values to startup_launch_plan for clarity
+if 'startup_launch_plan' not in st.session_state:
+    st.session_state.startup_launch_plan = None
 if 'generating' not in st.session_state:
     st.session_state.generating = False
 
@@ -335,12 +336,15 @@ def main_page():
         idea = st.text_area(
             "What idea do you have in mind?", 
             placeholder="e.g., A subscription service for AI-powered coding tutors",
-            height=100
+            height=100,
+            help="What is your product or service? What makes your product unique? How will you sell it?"
         )
-        values = st.text_area(
-            "What values are important to you?", 
-            placeholder="e.g., Accessibility, Innovation, and Community",
-            height=100
+        # Updated this section as requested
+        launch_plan = st.text_area(
+            "What are your thoughts on a launch plan?", 
+            placeholder="e.g., Starting with a beta in New York for tech startups.",
+            height=100,
+            help="Where are you launching first? Who is your ideal customer? Any constraints?"
         )
         
         # Center the button
@@ -349,11 +353,11 @@ def main_page():
         st.markdown('</div>', unsafe_allow_html=True)
 
         if submitted:
-            if not idea or not values:
+            if not idea or not launch_plan:
                 st.error("Please fill out both fields to generate your brand identity.")
             else:
                 st.session_state.startup_idea = idea
-                st.session_state.startup_values = values
+                st.session_state.startup_launch_plan = launch_plan # Updated state variable
                 st.session_state.generating = True # Flag to show spinner on next page
                 navigate_to(PAGE_NAMES["Branding"]) # Navigate to new page name
                 st.rerun()
@@ -361,7 +365,7 @@ def main_page():
 
 # --- Mock Generation and Prompt Template ---
 
-def get_mock_brand_output(idea, values):
+def get_mock_brand_output(idea, launch_plan):
     """
     Simulates a call to the Gemini API and returns a formatted string.
     """
@@ -369,31 +373,32 @@ def get_mock_brand_output(idea, values):
     # Pick one name to be consistent
     name_idea = idea.split(' ')[0].capitalize() if idea else "Innovate"
     selected_name = f"{name_idea}Sphere"
-    selected_tagline = f"Innovate for {values.split(',')[0]}."
+    # Use launch_plan in the mock data
+    selected_tagline = f"Launching first for {launch_plan.split(' ')[-1]}."
 
     # This simulates the formatted output from the LLM
     mock_output = f"""
 **1. Brand Name:** {selected_name}\n
 **Tagline:** {selected_tagline}\n
-**Tone/Meaning Explanation:** Combines '{name_idea}' (from your idea: {idea[:20]}...) and 'Sphere' (global, holistic), suggesting a brand focused on your values.\n\n
+**Tone/Meaning Explanation:** Combines '{name_idea}' (from your idea: {idea[:20]}...) and 'Sphere' (global, holistic), suggesting a brand focused on your launch goals.\n\n
 
 **2. Brand Name:** TerraPact\n
-**Tagline:** Built on {values}.\n
-**Tone/Meaning Explanation:** 'Terra' (Earth) + 'Pact' (promise). A strong, trustworthy name that commits to its values, inspired by your idea: "{idea[:20]}...".\n\n
+**Tagline:** Built for your launch: {launch_plan[:20]}...\n
+**Tone/Meaning Explanation:** 'Terra' (Earth) + 'Pact' (promise). A strong, trustworthy name that commits to its plan, inspired by your idea: "{idea[:20]}...".\n\n
 
 **3. Brand Name:** Kinetix Core\n
-**Tagline:** The {values.split(' ')[-1]} of Motion.\n
+**Tagline:** The Core of your Launch.\n
 **Tone/Meaning Explanation:** 'Kinetix' (energy, movement) + 'Core' (central, essential). This name sounds innovative and fundamental, perfect for a tech-driven startup.\n
 
 ---
 
 **Logo Concept Prompt:**
-“Design a logo for {selected_name}. The style should be modern and minimalist, feature a color palette inspired by {values} (e.g., earth tones like green, blue, and sand), and use imagery/symbols that reflect a fusion of technology and nature (like a stylized leaf forming a circuit or a clean, abstract globe). The emotional tone should convey trust, innovation, and sustainability.”
+“Design a logo for {selected_name}. The style should be modern and minimalist, feature a color palette inspired by your ideal customer (e.g., tech-forward blues, professional greys), and use imagery/symbols that reflect a fusion of technology and nature (like a stylized leaf forming a circuit or a clean, abstract globe). The emotional tone should convey trust, innovation, and sustainability.”
 
 ---
 
 **Poster Design Prompt:**
-“Create a visually engaging poster for {selected_name}, featuring the tagline '{selected_tagline}'. The poster should feature a subtle, abstract representation of a circuit board pattern merging with a natural landscape, use colors and typography consistent with {values} (deep greens, sky blues, and a clean, sans-serif font), and display imagery that aligns with the startup’s mission of '{idea[:30]}...'. The overall vibe should be aspirational, clean, and futuristic. Use a sleek, graphic illustration style.”
+“Create a visually engaging poster for {selected_name}, featuring the tagline '{selected_tagline}'. The poster should feature a subtle, abstract representation of a circuit board pattern merging with a natural landscape, use colors and typography consistent with your brand (deep greens, sky blues, and a clean, sans-serif font), and display imagery that aligns with the startup’s mission of '{idea[:30]}...'. The overall vibe should be aspirational, clean, and futuristic. Use a sleek, graphic illustration style.”
 """
     return mock_output
 
@@ -403,7 +408,7 @@ def page_a():
     create_main_navbar()
     
     # Check if we landed here from the form
-    if st.session_state.startup_idea and st.session_state.startup_values:
+    if st.session_state.startup_idea and st.session_state.startup_launch_plan:
         st.markdown('<h1 class="apple-page-title">Your Brand Identity</h1>', unsafe_allow_html=True)
         
         # Display the inputs
@@ -411,8 +416,8 @@ def page_a():
         <div class="input-summary-section">
             <h3>Startup Idea</h3>
             <p>"{st.session_state.startup_idea}"</p>
-            <h3 style="margin-top: 1rem;">Values</h3>
-            <p>"{st.session_state.startup_values}"</p>
+            <h3 style="margin-top: 1rem;">Launch Plan</h3>
+            <p>"{st.session_state.startup_launch_plan}"</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -423,7 +428,7 @@ def page_a():
                 time.sleep(2) # Simulate API call time
                 brand_output = get_mock_brand_output(
                     st.session_state.startup_idea, 
-                    st.session_state.startup_values
+                    st.session_state.startup_launch_plan # Pass updated variable
                 )
                 st.session_state.brand_output = brand_output # Store output
                 st.session_state.generating = False # Done generating
@@ -438,7 +443,7 @@ def page_a():
         # Clear the inputs so refreshing the page doesn't re-run
         # You might want to remove these lines if you want the data to persist
         # st.session_state.startup_idea = None
-        # st.session_state.startup_values = None
+        # st.session_state.startup_launch_plan = None
         
     else:
         # Original "Branding" page content (was "Vision Pro")
