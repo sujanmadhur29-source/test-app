@@ -231,6 +231,8 @@ APPLE_TAILWIND_CSS = """
         font-size: 1rem;
         color: #E0E0E0;
         line-height: 1.6;
+        word-wrap: break-word; /* Added for long string wrapping */
+        overflow-wrap: break-word; /* Added for long string wrapping */
     }
     
     .brand-output-section pre {
@@ -274,6 +276,8 @@ APPLE_TAILWIND_CSS = """
     .brand-output-section li {
         margin-bottom: 0.5rem;
         line-height: 1.6;
+        word-wrap: break-word; /* Added for long string wrapping */
+        overflow-wrap: break-word; /* Added for long string wrapping */
     }
 
     .brand-output-section img {
