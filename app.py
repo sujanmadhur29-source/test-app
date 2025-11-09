@@ -299,12 +299,14 @@ st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
 
 # Configure the API key from Streamlit secrets
 try:
-    API_KEY = st.secrets["AIzaSyDkoQ2M7c7EcUFpLBTMvFlAXjMg1f2TUHI"]
+    # API_KEY = st.secrets["GEMINI_API_KEY"] # Replaced secret with hardcoded key
+    API_KEY = "AIzaSyDkoQ2M7c7EcUFpLBTMvFlAXjMg1f2TUHI"
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
     GEMINI_ENABLED = True
 except Exception as e:
-    st.error(f"Error configuring Gemini API: {e}. Please ensure GEMINI_API_KEY is set in your Streamlit secrets.")
+    # Updated error message
+    st.error(f"Error configuring Gemini API: {e}. Please check the API key.")
     GEMINI_ENABLED = False
 
 # The prompt template to be filled by user inputs
