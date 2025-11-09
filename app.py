@@ -287,6 +287,45 @@ APPLE_TAILWIND_CSS = """
         border: 1px solid #333;
     }
 
+    /* NEW: Styling for tables to prevent overflow */
+    .brand-output-section table {
+        display: block; /* Makes the table scrollable */
+        width: 100%;
+        overflow-x: auto; /* Adds horizontal scroll if needed */
+        border-collapse: collapse;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #333; /* Border to match theme */
+        border-radius: 8px; /* Match other elements */
+    }
+
+    .brand-output-section th,
+    .brand-output-section td {
+        border-bottom: 1px solid #333; /* Cell borders */
+        padding: 0.75rem 1rem; /* Spacing */
+        color: #E0E0E0;
+        white-space: nowrap; /* Prevents text from wrapping and breaking layout */
+        border-left: 1px solid #333;
+    }
+    
+    .brand-output-section td:first-child,
+    .brand-output-section th:first-child {
+        border-left: none; /* Remove double border on the left */
+    }
+
+    .brand-output-section th {
+        background-color: #2a2a2a; /* Header background */
+        font-weight: 600;
+        text-align: left;
+    }
+    
+    .brand-output-section tr:first-child th:first-child {
+        border-top-left-radius: 7px; /* Rounded corner */
+    }
+    .brand-output-section tr:first-child th:last-child {
+        border-top-right-radius: 7px; /* Rounded corner */
+    }
+
 
     /* Hide default Streamlit Chrome for a cleaner look */
     #MainMenu {visibility: hidden;}
