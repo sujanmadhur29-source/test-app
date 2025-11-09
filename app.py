@@ -1,5 +1,7 @@
 import streamlit as st
 import time
+import google.generativeai as genai
+import os
 
 # --- 1. CONFIGURATION AND STYLING (MIMICKING APPLE/TAILWIND) ---
 
@@ -293,8 +295,75 @@ APPLE_TAILWIND_CSS = """
 st.set_page_config(layout="wide", page_title="Brand Generator App")
 st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
 
+# --- 2. GEMINI API CONFIGURATION ---
 
-# --- 2. STATE AND NAVIGATION FUNCTIONS ---
+# Configure the API key from Streamlit secrets
+try:
+    API_KEY = st.secrets["GEMINI_API_KEY"]
+    genai.configure(api_key=API_KEY)
+    model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
+    GEMINI_ENABLED = True
+except Exception as e:
+    st.error(f"Error configuring Gemini API: {e}. Please ensure GEMINI_API_KEY is set in your Streamlit secrets.")
+    GEMINI_ENABLED = False
+
+# The prompt template to be filled by user inputs
+SEGMENTATION_PROMPT_TEMPLATE = """
+You are a Startup Market Segmentation Expert with access to generative tools and data APIs.
+
+---
+### USER INPUTS
+* **Startup Idea:** {idea}
+* **Launch Plan:** {launch_plan}
+---
+
+Based on these inputs, generate a detailed market segmentation analysis.
+
+### Your objectives:
+1. Generate detailed target market and customer segmentation for the startup’s product idea.
+2. Output both analytical and creative persona details. **IMPORTANT: For the 'Generated Persona Image', do NOT generate an image. Instead, use a descriptive placeholder URL from 'https://placehold.co/300x300/E0E0E0/000000?text=Persona+Name'**, replacing 'Persona+Name' with the actual persona's name (e.g., Aarav+K).
+
+---
+### Step 1: Primary Target Market
+Write one crisp sentence defining:
+* The broad target market (country, demographics, psychographic need) based on the user's inputs.
+---
+### Step 2: Customer Segments (3–5)
+For each segment, provide:
+* **Segment Name:** Catchy but descriptive
+* **Demographics:** Age, gender, income, geography
+* **Psychographics:** Values, attitudes, lifestyle
+* **Buying Motivations:** Key reasons to purchase
+* **Pain Points / Unmet Needs:**
+* **Channels & Media Preferences:** (Instagram, Blinkit, Zomato, LinkedIn, etc.)
+* **Price Sensitivity:** High / Medium / Low
+* **Fit with Brand:** High / Medium / Low
+* **Persona Summary:** ≤80 words; written like a short story about this person’s daily life
+* **Generated Persona Image:** [Use the https://placehold.co URL as specified in the objectives]
+Use realistic, India-specific details and current digital behavior cues based on the user's inputs.
+---
+### Step 3: Segment Prioritization
+* Identify 1–2 high-priority segments to target first, and justify clearly.
+* **Suggest the key marketing message or value proposition for them.**
+---
+### Step 4: Positioning Implication
+* Define how the brand should position itself to attract these top segments.
+* Suggest tone of voice and visual style cues for creatives.
+---
+### Step 5: Risks / Overlooked Audiences
+* Highlight blind spots, compliance or regulatory concerns (e.g., FSSAI for beverages), and emerging opportunities.
+---
+### Step 6: Output Formatting
+Return your answer using clean, readable Markdown (headings, bullets) for clarity and embed the placeholder image URLs directly.
+---
+### Constraints
+* Keep it concise, practical, and realistic to the Indian market.
+* Use INR and Asia/Kolkata context.
+* Avoid generic phrasing; show behavioral, digital, and cultural nuance relevant to the user's idea.
+"""
+
+
+# --- 3. STATE AND NAVIGATION FUNCTIONS ---
 
 PAGE_NAMES = {
     "Home": "main_page",
@@ -393,7 +462,7 @@ def main_page():
         
         # Center the button
         st.markdown('<div class="apple-primary-button-container" style="display: flex; justify-content: center;">', unsafe_allow_html=True)
-        submitted = st.form_submit_button("Generate Brand Identity", type="primary")
+        submitted = st.form_submit_button("Generate Brand Identity", type="primary", disabled=not GEMINI_ENABLED)
         st.markdown('</div>', unsafe_allow_html=True)
 
         if submitted:
@@ -407,171 +476,28 @@ def main_page():
                 st.rerun()
 
 
-# --- Mock Generation and Prompt Template ---
+# --- 4. GEMINI API CALL FUNCTION ---
 
-def get_mock_segmentation_output(idea, launch_plan):
+def call_gemini_api(idea, launch_plan):
     """
-    Simulates a call to the Gemini API based on the new segmentation prompt.
-    This is now a "smarter" mock that dynamically builds the output
-    based on keywords in the inputs.
+    Calls the Gemini API with the formatted segmentation prompt.
     """
+    if not GEMINI_ENABLED:
+        return "Error: Gemini API is not configured. Please check your API key."
+
+    # Format the prompt with user inputs
+    prompt = SEGMENTATION_PROMPT_TEMPLATE.format(idea=idea, launch_plan=launch_plan)
     
-    # --- 1. Parse Inputs for Dynamic Insertion ---
-    
-    # Simple product name (e.g., "CodeTutor" from "A subscription service for AI-powered coding tutors")
-    product_name = "Your Product"
-    if idea and len(idea.split(' ')) > 0:
-        # Try to find a noun phrase
-        if "service for" in idea.lower():
-            product_name = idea.lower().split("service for")[-1].strip().capitalize()
-        elif "app for" in idea.lower():
-            product_name = idea.lower().split("app for")[-1].strip().capitalize()
-        else:
-            product_name = idea.split(' ')[0].capitalize()
-            if product_name.lower() in ['a', 'an', 'the'] and len(idea.split(' ')) > 1:
-                 product_name = idea.split(' ')[1].capitalize()
-    
-    # Simple launch city parsing
-    launch_city = "Bangalore" # Default
-    if "mumbai" in launch_plan.lower():
-        launch_city = "Mumbai"
-    elif "delhi" in launch_plan.lower():
-        launch_city = "Delhi"
-    elif "pune" in launch_plan.lower():
-        launch_city = "Pune"
-    elif "chennai" in launch_plan.lower():
-        launch_city = "Chennai"
+    try:
+        # Generate content
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"An error occurred while calling the Gemini API: {e}")
+        return f"Error: Could not generate content. {e}"
 
-    # Simple ideal customer parsing
-    ideal_customer = "tech professionals" # Default
-    if "student" in launch_plan.lower():
-        ideal_customer = "students"
-    elif "startup" in launch_plan.lower():
-        ideal_customer = "tech startups"
-    elif "doctor" in launch_plan.lower() or "medical" in launch_plan.lower():
-        ideal_customer = "doctors"
-    elif "home cook" in launch_plan.lower() or "food" in idea.lower():
-        ideal_customer = "home cooks"
-    elif "teacher" in launch_plan.lower() or "education" in idea.lower():
-        ideal_customer = "teachers"
-        
-    # Use placeholder images
-    img1_url = f"https://placehold.co/300x300/E0E0E0/000000?text=Persona+1+({ideal_customer})"
-    img2_url = f"https://placehold.co/300x300/B0B0B0/000000?text=Persona+2+({launch_city})"
 
-    
-    # --- 2. Dynamically build the mock output string section by section ---
-    
-    # --- Step 1 ---
-    step1 = f"""
-### Step 1: Primary Target Market
-The primary target market is **{ideal_customer}** in urban India (initially **{launch_city}**), aged 18-35, who are actively seeking a solution for: *{idea[:60]}...*
-"""
-    
-    # --- Step 2 (Dynamic Personas) ---
-    
-    # Create persona templates
-    persona1_name = "Segment 1: The 'Core User'"
-    persona1_demo = f"23-30, Any Gender, Mid-income, Tier 1 city ({launch_city})."
-    persona1_psych = "Digitally native, values convenience and efficiency, willing to pay for quality."
-    persona1_pain = f"Struggles with the 'old way' of doing things. Specifically, needs help with **{product_name}**."
-    persona1_summary = f"This user is a busy professional in {launch_city} who fits your target of **{ideal_customer}**. They are frustrated with current solutions for *{idea[:40]}...* and are actively searching for a better tool like **{product_name}**."
-
-    persona2_name = "Segment 2: The 'Explorer'"
-    persona2_demo = "18-24, Any Gender, Low-income (student/early-career), Tier 1/2 cities."
-    persona2_psych = "Curious, loves trying new tech, price-sensitive, highly social and vocal."
-    persona2_pain = f"Wants to learn about or try *{idea[:40]}...* but finds existing options too expensive or complex."
-    persona2_summary = f"This user is a student or new graduate in {launch_city} who is excited by new technology. They might not be a paying user today, but they are your future evangelist and will spread the word about **{product_name}** in their social circles."
-
-    # Overwrite with specific templates if keywords match
-    if ideal_customer == "students":
-        persona1_name = "Aarav K. (The Ambitious Student)"
-        persona1_demo = f"18-22, Male/Female, Low-income (student), Tier 1/2 city (e.g., {launch_city}, Pune)."
-        persona1_psych = "Stressed about placements, values academic performance, FOMO, digitally native."
-        persona1_pain = f"Needs a better way to learn than the college curriculum. Specifically, needs help with **{product_name}**."
-        persona1_summary = f"Aarav is a 3rd-year B.Tech student in {launch_city} juggling assignments. He's stressed about placements and feels his college syllabus is outdated. He needs a tool like **{product_name}** to explain complex concepts at 2 AM."
-
-        persona2_name = "Priya S. (The Early-Career Accelerator)"
-        persona2_demo = f"23-28, Male/Female, Income ₹8L-₹15L, Tier 1 city ({launch_city}, Mumbai)."
-        persona2_psych = "Career-focused, time-poor, values efficiency and ROI, invests in self-improvement."
-        persona2_pain = f"Lacks time for long courses, needs specific, on-the-job answers related to **{product_name}**."
-        persona2_summary = f"Priya is a Software Engineer with 2 years of experience at a {launch_city} startup. She wants to get promoted and sees **{product_name}** as a key tool to help her. She's frustrated by generic solutions and needs something that solves her specific problem: *{idea[:30]}...*"
-
-    elif ideal_customer == "doctors":
-        persona1_name = "Dr. Rohan M. (The Resident)"
-        persona1_demo = f"26-32, Male/Female, Stipend/Early Salary, Metros ({launch_city})."
-        persona1_psych = "Overworked, time-poor, values accuracy and speed, evidence-based."
-        persona1_pain = f"Struggles with administrative overhead, needs a faster way to access patient info or diagnostics. Your idea, **{product_name}**, could help."
-        persona1_summary = f"Rohan is a resident at a top {launch_city} hospital. He's on his feet 18 hours a day. He needs a tool like **{product_name}** to quickly manage *{idea[:30]}...* between rounds, rather than using outdated hospital software."
-        
-        persona2_name = "Dr. Ananya V. (The Specialist)"
-        persona2_demo = f"35-45, Female, High Income, Tier 1 ({launch_city}, Mumbai, Delhi)."
-        persona2_psych = "Runs a private practice, values patient experience, wants to optimize her clinic."
-        persona2_pain = f"Managing appointments and patient follow-ups is chaotic. **{product_name}** could streamline her practice."
-        persona2_summary = f"Ananya is a specialist in {launch_city} with a growing private practice. She wants to offer a premium patient experience but is bogged down by admin. She's looking for a tool just like **{product_name}** to solve *{idea[:30]}...*"
-
-    step2 = f"""
----
-### Step 2: Customer Segments
-
-#### {persona1_name}
-* **Demographics:** {persona1_demo}
-* **Psychographics:** {persona1_psych}
-* **Buying Motivations:** To solve their immediate, high-priority problem.
-* **Pain Points / Unmet Needs:** {persona1_pain}
-* **Channels & Media Preferences:** Instagram, LinkedIn, Niche Communities (e.g., Discord, Reddit).
-* **Price Sensitivity:** Medium.
-* **Fit with Brand:** High.
-* **Persona Summary:** {persona1_summary}
-* **Generated Persona Image:**
-    ![Persona 1]({img1_url})
-
-#### {persona2_name}
-* **Demographics:** {persona2_demo}
-* **Psychographics:** {persona2_psych}
-* **Buying Motivations:** To improve efficiency, save time, or for curiosity.
-* **Pain Points / Unmet Needs:** {persona2_pain}
-* **Channels & Media Preferences:** LinkedIn, Twitter/X, Zomato/Swiggy, Tech Blogs.
-* **Price Sensitivity:** High / Medium.
-* **Fit with Brand:** Medium to High.
-* **Persona Summary:** {persona2_summary}
-* **Generated Persona Image:**
-    ![Persona 2]({img2_url})
-"""
-
-    # --- Step 3 ---
-    step3 = f"""
----
-### Step 3: Segment Prioritization
-* **High-Priority Segment:**
-    1.  **"{persona1_name.split(':')[-1].strip()}":** This group has the highest immediate need, clear buying intent, and (likely) the financial capacity to pay. They will be the best source of quality feedback for your beta in **{launch_city}**.
-* **Key Marketing Message:** "Stop wasting time with old solutions. **{product_name}** is the new, intelligent way to solve *{idea[:30]}...* for busy **{ideal_customer}** like you."
-"""
-
-    # --- Step 4 ---
-    step4 = f"""
----
-### Step 4: Positioning Implication
-* **Positioning:** Position **{product_name}** as the most "intelligent, practical, and personalized" solution for **{ideal_customer}** in India.
-* **Tone of Voice:** Empowering, clear, and empathetic. Avoid jargon. Be the "smart assistant" they wish they had.
-* **Visual Style Cues:** Clean, dark-mode first UI, bright, "intelligent" accent colors, and professional sans-serif fonts.
-"""
-    
-    # --- Step 5 ---
-    step5 = f"""
----
-### Step 5: Risks / Overlooked Audiences
-* **Risks:**
-    * **Competition:** Free tools or "good enough" manual processes are your biggest competitors. The value must be 10x better.
-    * **Data Privacy:** Be clear about how user data is (or isn't) used, especially if you're targeting sensitive fields like **{ideal_customer}**.
-* **Overlooked Audience Opportunity:**
-    * **Tier 2/3 Cities:** Don't just focus on **{launch_city}**. Ambitious **{ideal_customer}** in cities like Jaipur, Coimbatore, or Indore have high ambition but fewer tools.
-"""
-    
-    # --- Combine and Return ---
-    final_output = f"{step1}{step2}{step3}{step4}{step5}"
-    return final_output
-
+# --- 5. PAGE CONTENT FUNCTIONS ---
 
 def page_a():
     """Segment View Page / Brand Output Page"""
@@ -594,11 +520,11 @@ def page_a():
         output_placeholder = st.empty()
         
         if st.session_state.generating:
-            with st.spinner("Generating your brand..."):
-                time.sleep(2) # Simulate API call time
-                segmentation_output = get_mock_segmentation_output(
+            with st.spinner("Calling Gemini to generate your brand identity..."):
+                # Replaced mock function with live API call
+                segmentation_output = call_gemini_api(
                     st.session_state.startup_idea, 
-                    st.session_state.startup_launch_plan # Pass updated variable
+                    st.session_state.startup_launch_plan
                 )
                 st.session_state.segmentation_output = segmentation_output # Store output
                 st.session_state.generating = False # Done generating
@@ -699,7 +625,7 @@ def page_e():
     """, unsafe_allow_html=True)
 
 
-# --- 4. MAIN APPLICATION LOGIC ---
+# --- 6. MAIN APPLICATION LOGIC ---
 
 page_functions = {
     PAGE_NAMES["Home"]: main_page,
