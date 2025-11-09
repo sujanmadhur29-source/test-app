@@ -299,7 +299,7 @@ st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
 
 # Configure the API key from Streamlit secrets
 try:
-    API_KEY = st.secrets["GEMINI_API_KEY"]
+    API_KEY = st.secrets["AIzaSyDkoQ2M7c7EcUFpLBTMvFlAXjMg1f2TUHI"]
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
     GEMINI_ENABLED = True
