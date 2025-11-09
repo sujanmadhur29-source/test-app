@@ -1,7 +1,8 @@
+
 import streamlit as st
-import google.generativeai as genai
 import time
-import re
+import google.generativeai as genai
+import os
 
 # --- 1. CONFIGURATION AND STYLING (MIMICKING APPLE/TAILWIND) ---
 
@@ -37,165 +38,194 @@ APPLE_TAILWIND_CSS = """
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
-    
+
     .apple-hero-subtitle {
-        font-size: 1.25rem;
+        font-size: 1.5rem;
         font-weight: 400;
-        color: #888888; /* Softer grey */
         text-align: center;
-        margin-bottom: 3rem;
+        color: #888888;
+        margin: 0 auto 3rem auto;
     }
     
     .apple-page-title {
-        font-size: 2.5rem;
-        font-weight: 600;
+        font-size: 3rem;
+        font-weight: 700;
+        line-height: 1.2;
         margin-bottom: 2rem;
-        border-bottom: 1px solid #333;
-        padding-bottom: 0.5rem;
-        color: #FAFAFA;
+        text-align: center;
     }
 
-    /* 3. Custom Horizontal Navigation Bar (Pill Shape) */
-    .apple-nav-container {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 2.5rem;
-    }
-    
-    .apple-nav {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: #1a1a1a; /* Darker charcoal */
-        border-radius: 9999px; /* Pill shape */
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #2a2a2a;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    }
-    
-    .apple-nav-item {
-        background-color: transparent;
-        border: none;
-        color: #888888; /* Dimmed, unselected text */
-        font-weight: 500;
-        padding: 0.75rem 1.25rem;
-        border-radius: 9999px;
-        text-decoration: none;
-        margin: 0 0.25rem;
-        transition: all 0.3s ease;
-    }
-    
-    .apple-nav-item:hover {
-        background-color: #2a2a2a; /* Subtle hover */
-        color: #FFFFFF;
-    }
-    
-    .apple-nav-item-selected {
-        background-color: #444444; /* Grey for selected item */
-        color: #FFFFFF;
-    }
-
-    /* 4. Form and Input Styling */
-    .brand-form-container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 2.5rem;
-        background-color: #121212; /* Slightly lighter than pure black */
-        border-radius: 12px;
-        border: 1px solid #2a2a2a;
-    }
-    
-    /* Style the placeholder text */
-    ::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
-      color: #555 !important; /* Lighter grey */
-      opacity: 1 !important; /* Firefox */
-      font-style: italic;
-      font-size: 0.95rem; /* Slightly smaller */
-    }
-
-    :-ms-input-placeholder { /* Internet Explorer 10-11 */
-      color: #555 !important;
-      font-style: italic;
-      font-size: 0.95rem;
-    }
-
-    ::-ms-input-placeholder { /* Microsoft Edge */
-      color: #555 !important;
-      font-style: italic;
-      font-size: 0.95rem;
-    }
-    
-    /* Make the text area labels larger */
-    .stTextArea label {
-        font-size: 1.15rem;
-        font-weight: 600;
-        color: #FAFAFA !important;
-        margin-bottom: 0.5rem;
-    }
-    
-    /* Style the text area itself */
-    .stTextArea textarea {
+    /* 3. Card/Navigation Styling (Minimalist) - Kept for future use if needed */
+    .apple-card {
         background-color: #1a1a1a;
-        border: 1px solid #333;
-        color: #FFFFFF;
-        border-radius: 8px;
-        min-height: 120px;
-    }
-    
-    /* Custom Streamlit Button (Submit) */
-    .stButton button {
-        background-color: #007AFF; /* Apple Blue */
-        color: white;
-        font-weight: 600;
-        border: none;
-        border-radius: 8px;
-        padding: 0.75rem 1.5rem;
-        width: 100%;
-        margin-top: 1rem;
-        transition: background-color 0.3s ease;
-    }
-    
-    .stButton button:hover {
-        background-color: #0056b3; /* Darker blue on hover */
-    }
-
-    /* 5. Custom Output Section Styling */
-    .brand-output-section {
-        margin-top: 3rem;
-        padding: 2rem;
-        background-color: #121212;
-        border: 1px solid #2a2a2a;
         border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+    }
+    
+    .apple-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* 4. Default Button Styling (Pill shape) - Now used for nav */
+    div.stButton > button {
+        background-color: #1a1a1a; 
+        color: #FFFFFF;
+        border: 1px solid #333333;
+        border-radius: 9999px; /* Pill shape */
+        padding: 10px 20px;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: background-color 0.2s, border-color 0.2s;
+        cursor: pointer;
     }
 
-    .brand-output-section h1,
-    .brand-output-section h2,
-    .brand-output-section h3 {
-        color: #FAFAFA;
-        border-bottom: 1px solid #333;
-        padding-bottom: 0.5rem;
+    div.stButton > button:hover {
+        background-color: #333333;
+        border-color: #555555;
+    }
+    
+    /* 5. NEW Horizontal Navigation Bar */
+    .apple-nav-container {
+        width: 100%;
+        border-bottom: 1px solid #2a2a2a; /* Subtle separator */
+        margin-bottom: 3rem;
+        padding: 0.5rem 0; /* Updated padding */
+        background-color: #101010; /* Dark "strip" background */
+        border-radius: 12px; /* Rounded corners */
+    }
+    
+    /* Style for the buttons within the nav */
+    .apple-nav-container [data-testid="stButton"] > button {
+        background: none !important;
+        border: none !important;
+        color: #888888 !important; /* Inactive link color */
+        padding: 5px 10px !important;
+        font-size: 0.95rem; /* Slightly smaller */
+        font-weight: 500;
+        text-align: center;
+        width: 100%;
+    }
+
+    .apple-nav-container [data-testid="stButton"] > button:hover {
+        color: #FFFFFF !important; /* White on hover */
+        background: none !important;
+        border: none !important;
+    }
+    
+    /* Style for the *disabled* (active) button */
+    .apple-nav-container [data-testid="stButton"] > button:disabled {
+        font-weight: 600; /* Bolder */
+        color: #FFFFFF !important; /* Active link color */
+        background: none !important;
+        border: none !important;
+        cursor: default !important;
+    }
+
+    /* 6. Form Element Styling */
+    [data-testid="stTextInput"] > div > div > input,
+    [data-testid="stTextArea"] > div > div > textarea {
+        background-color: #1a1a1a;
+        color: #FFFFFF;
+        border: 1px solid #333333;
+        border-radius: 8px; /* Slightly less rounded than pills */
+        padding: 12px 15px;
+        font-size: 1rem;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    [data-testid="stTextArea"] > div > div > textarea {
+        min-height: 100px; /* Specific to text area */
+    }
+
+    /* NEW: Style for placeholders */
+    [data-testid="stTextInput"] > div > div > input::placeholder,
+    [data-testid="stTextArea"] > div > div > textarea::placeholder {
+        color: #777777;
+        font-size: 0.9rem;
+        font-style: italic;
+    }
+
+    /* Style for text input labels */
+    [data-testid="stTextInput"] label,
+    [data-testid="stTextArea"] label {
+        color: #AAAAAA;
+        font-weight: 500;
+        padding-bottom: 5px;
+    }
+
+    /* 7. Primary Action Button (for 'Generate') - Primary Style */
+    .apple-primary-button-container div.stButton > button {
+        background-color: #007AFF !important; /* Apple Blue */
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 9999px; /* Pill shape */
+        padding: 12px 28px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: background-color 0.2s;
+        width: auto; /* Allow it to size to content */
         margin-top: 1.5rem;
     }
+    
+    .apple-primary-button-container div.stButton > button:disabled {
+        background: #333 !important; /* Disabled grey */
+        color: #FFFFFF !important;
+        border: none !important;
+    }
 
-    .brand-output-section h1 {
-        font-size: 2rem;
-        font-weight: 600;
+    .apple-primary-button-container div.stButton > button:hover {
+        background-color: #0056b3 !important; /* Darker blue on hover */
+        color: #FFFFFF !important;
+        border: none !important;
     }
     
+    /* 8. Input Summary Styling */
+    .input-summary-section {
+        background-color: #101010; /* Darker than output */
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .input-summary-section h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #AAAAAA; /* Grey label */
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .input-summary-section p {
+        font-size: 1.1rem;
+        color: #E0E0E0;
+        line-height: 1.6;
+        font-style: italic;
+        /* Use pre-wrap to respect newlines in the input */
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    /* 9. Output Display Styling */
+    .brand-output-section {
+        background-color: #1a1a1a;
+        border-radius: 12px;
+        padding: 2rem 2.5rem;
+        margin-top: 2rem;
+        border: 1px solid #2a2a2a;
+    }
+
     .brand-output-section h2 {
         font-size: 1.5rem;
         font-weight: 600;
-    }
-
-    .brand-output-section h3 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        border-bottom: none;
-    }
-    
-    .brand-output-section strong {
         color: #FFFFFF;
-        font-weight: 600;
+        border-bottom: 1px solid #333;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
     }
 
     .brand-output-section p {
@@ -207,18 +237,38 @@ APPLE_TAILWIND_CSS = """
     }
     
     .brand-output-section pre {
-        background-color: #1a1a1a;
-        color: #E0E0E0;
-        padding: 1rem;
+        white-space: pre-wrap; /* Ensure text wraps */
+        word-wrap: break-word; /* Break long words */
+        background-color: #080808; /* Slightly darker */
+        padding: 1.5rem;
         border-radius: 8px;
-        border: 1px solid #333;
-        font-family: 'Courier New', Courier, monospace;
-        white-space: pre-wrap; /* Allow code blocks to wrap */
-        word-wrap: break-word;
+        color: #E0E0E0;
+        font-family: 'Menlo', 'Consolas', monospace;
+        font-size: 0.95rem;
+        line-height: 1.7;
     }
     
-    .brand-output-section ul,
-    .brand-output-section ol {
+    /* NEW: Styling for markdown generated by the new prompt */
+    .brand-output-section h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #FFFFFF;
+        margin-top: 2rem;
+        margin-bottom: 0.5rem;
+        border-bottom: 1px solid #333;
+        padding-bottom: 0.5rem;
+    }
+    
+    .brand-output-section h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #E0E0E0;
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .brand-output-section ul {
+        list-style-type: disc;
         margin-left: 20px;
         padding-left: 0;
         color: #E0E0E0;
@@ -255,7 +305,7 @@ APPLE_TAILWIND_CSS = """
         border-bottom: 1px solid #333; /* Cell borders */
         padding: 0.75rem 1rem; /* Spacing */
         color: #E0E0E0;
-        white-space: nowrap; /* CHANGED: Prevents text from wrapping and breaking layout */
+        white-space: nowrap; /* Prevents text from wrapping and breaking layout */
         border-left: 1px solid #333;
     }
     
@@ -282,48 +332,47 @@ APPLE_TAILWIND_CSS = """
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    
-    /* Fix for Streamlit's white flash on first load */
-    body.stApp {
-        background-color: #000000;
-    }
 </style>
 """
 
-# --- 2. PAGE AND PROMPT DEFINITIONS ---
+# Apply the custom CSS at the start
+st.set_page_config(layout="wide", page_title="Brand Generator App")
+st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
 
-# Dictionary for page names, making it easy to change them
-PAGE_NAMES = {
-    "Home": "Home",
-    "Branding": "Segment View",
-    "MacBook": "Target Lens",
-    "iPhone 16": "Market Radar",
-    "Watch X": "Roadmap",
-    "AirPods Max": "Pricing",
-}
+# --- 2. GEMINI API CONFIGURATION ---
 
-# --- Prompt for Segmentation (Step-by-Step) ---
-PROMPT_HEADER = """
-You are a Startup Market Segmentation Expert with access to generative tools and data APIs.
-Your objectives:
-1. Generate detailed target market and customer segmentation for the startup’s product idea.
-2. Output both analytical and creative persona details, including a generated image for each persona.
+# Configure the API key from Streamlit secrets
+try:
+    # API_KEY = st.secrets["GEMINI_API_KEY"] # Replaced secret with hardcoded key
+    API_KEY = "AIzaSyDkoQ2M7c7EcUFpLBTMvFlAXjMg1f2TUHI"
+    genai.configure(api_key=API_KEY)
+    model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
+    GEMINI_ENABLED = True
+except Exception as e:
+    # Updated error message
+    st.error(f"Error configuring Gemini API: {e}. Please check the API key.")
+    GEMINI_ENABLED = False
 
-Use realistic, India-specific details and current digital behavior cues.
-Use INR and Asia/Kolkata context.
-Avoid generic phrasing; show behavioral, digital, and cultural nuance.
-
-Here is the startup's information:
-"""
-
-# The main prompt template
+# The prompt template to be filled by user inputs
 SEGMENTATION_PROMPT_TEMPLATE = """
-**Startup Idea:** {idea}
-**Launch Plan:** {launch_plan}
+You are a Startup Market Segmentation Expert with access to generative tools and data APIs.
+
+---
+### USER INPUTS
+* **Startup Idea:** {idea}
+* **Launch Plan:** {launch_plan}
+---
+
+Based on these inputs, generate a detailed market segmentation analysis.
+
+### Your objectives:
+1. Generate detailed target market and customer segmentation for the startup’s product idea.
+2. Output both analytical and creative persona details. **IMPORTANT: For the 'Generated Persona Image', do NOT generate an image. Instead, use a descriptive placeholder URL from 'https://placehold.co/300x300/E0E0E0/000000?text=Persona+Name'**, replacing 'Persona+Name' with the actual persona's name (e.g., Aarav+K).
+
 ---
 ### Step 1: Primary Target Market
 Write one crisp sentence defining:
-* The broad target market (country, demographics, psychographic need).
+* The broad target market (country, demographics, psychographic need) based on the user's inputs.
 ---
 ### Step 2: Customer Segments (3–5)
 For each segment, provide:
@@ -336,11 +385,12 @@ For each segment, provide:
 * **Price Sensitivity:** High / Medium / Low
 * **Fit with Brand:** High / Medium / Low
 * **Persona Summary:** ≤80 words; written like a short story about this person’s daily life
-* **Generated Persona Image:** [Generate and embed the image here based on the persona summary and demographics]
+* **Generated Persona Image:** [Use the https://placehold.co URL as specified in the objectives]
+Use realistic, India-specific details and current digital behavior cues based on the user's inputs.
 ---
 ### Step 3: Segment Prioritization
 * Identify 1–2 high-priority segments to target first, and justify clearly.
-* Suggest the key marketing message or value proposition for them.
+* **Suggest the key marketing message or value proposition for them.**
 ---
 ### Step 4: Positioning Implication
 * Define how the brand should position itself to attract these top segments.
@@ -350,231 +400,253 @@ For each segment, provide:
 * Highlight blind spots, compliance or regulatory concerns (e.g., FSSAI for beverages), and emerging opportunities.
 ---
 ### Step 6: Output Formatting
-Return your answer using this clean, readable structure. Use Markdown (headings, bullets) for clarity and embed generated images directly within the 'Customer Segments' section.
+Return your answer using clean, readable Markdown (headings, bullets) for clarity and embed the placeholder image URLs directly.
+---
+### Constraints
+* Keep it concise, practical, and realistic to the Indian market.
+* Use INR and Asia/Kolkata context.
+* Avoid generic phrasing; show behavioral, digital, and cultural nuance relevant to the user's idea.
 """
 
-# --- 3. HELPER FUNCTIONS ---
 
-def inject_custom_css():
-    """Injects the global CSS string into the Streamlit app."""
-    st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
+# --- 3. STATE AND NAVIGATION FUNCTIONS ---
+
+PAGE_NAMES = {
+    "Home": "main_page",
+    "Segment View": "page_a", # Renamed from "Branding"
+    "Target Lens": "page_b", # Renamed from "MacBook"
+    "Market Radar": "page_c", # Renamed from "iPhone 16"
+    "Roadmap": "page_d", # Renamed from "Watch X"
+    "Pricing": "page_e", # Renamed from "AirPods Max"
+}
+
+# Initialize session state for page management
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = PAGE_NAMES["Home"]
+if 'startup_idea' not in st.session_state:
+    st.session_state.startup_idea = None
+# Renamed startup_values to startup_launch_plan for clarity
+if 'startup_launch_plan' not in st.session_state:
+    st.session_state.startup_launch_plan = None
+if 'generating' not in st.session_state:
+    st.session_state.generating = False
+
+def navigate_to(page_key):
+    """Sets the current page in session state."""
+    st.session_state.current_page = page_key
 
 def create_main_navbar():
-    """Creates the Apple-style pill navigation bar."""
-    
-    # Get the name of the current script being run
-    try:
-        current_page_script = st.runtime.get_script_run_ctx().page_script_hash
-        current_page_name = st.session_state.page_script_hash_to_name[current_page_script]
-    except Exception:
-        # Fallback for initial run or if context is not available
-        current_page_name = st.session_state.get("current_page", PAGE_NAMES["Home"])
-
-    st.session_state.current_page = current_page_name
-    
-    # Create the navigation container
+    """Creates the static horizontal navigation bar."""
     st.markdown('<div class="apple-nav-container">', unsafe_allow_html=True)
-    st.markdown('<div class="apple-nav">', unsafe_allow_html=True)
+    cols = st.columns(6)
     
-    # Loop through page names and create nav items
-    for page_name in PAGE_NAMES.values():
-        if page_name == st.session_state.current_page:
-            # Selected item
-            st.markdown(
-                f'<a href="?page={page_name}" target="_self" class="apple-nav-item apple-nav-item-selected">{page_name}</a>', 
-                unsafe_allow_html=True
-            )
-        else:
-            # Unselected item
-            st.markdown(
-                f'<a href="?page={page_name}" target="_self" class="apple-nav-item">{page_name}</a>', 
-                unsafe_allow_html=True
-            )
-            
-    st.markdown('</div></div>', unsafe_allow_html=True)
+    page_keys = list(PAGE_NAMES.keys()) # ["Home", "Branding", ...]
+    page_values = list(PAGE_NAMES.values()) # ["main_page", "page_a", ...]
+    
+    with cols[0]:
+        is_active = st.session_state.current_page == page_values[0]
+        if st.button(page_keys[0], key="nav_home", disabled=is_active):
+            navigate_to(page_values[0])
+            st.rerun() # Use rerun for instant page switch
+    
+    with cols[1]:
+        is_active = st.session_state.current_page == page_values[1]
+        if st.button(page_keys[1], key="nav_branding", disabled=is_active): # Updated key (key name is internal, fine to keep)
+            navigate_to(page_values[1])
+            st.rerun()
+                
+    with cols[2]:
+        is_active = st.session_state.current_page == page_values[2]
+        if st.button(page_keys[2], key="nav_mac", disabled=is_active):
+            navigate_to(page_values[2])
+            st.rerun()
 
-def get_gemini_output(idea: str, launch_plan: str) -> str:
-    """
-    Generates content using the Gemini API based on the startup idea and launch plan.
-    """
-    try:
-        # Configure the API key
-        API_KEY = "AIzaSyDkoQ2M7c7EcUFpLBTMvFlAXjMg1f2TUHI"
-        
-        if not API_KEY:
-            return "Error: GEMINI_API_KEY is not configured. Please set it in Streamlit secrets."
-            
-        genai.configure(api_key=API_KEY)
-        
-        # Initialize the model
-        model = genai.GenerativeModel('gemini-2.5-flash-preview-09-2025')
-        
-        # Construct the full prompt
-        full_prompt = (
-            f"{PROMPT_HEADER}\n"
-            f"{SEGMENTATION_PROMPT_TEMPLATE.format(idea=idea, launch_plan=launch_plan)}"
-        )
-        
-        # Generate content
-        response = model.generate_content(full_prompt)
-        
-        # Extract and clean the text
-        text_output = response.text
-        
-        # A simple regex to replace placeholder image prompts with actual placeholder images
-        # This makes the output look more complete
-        placeholder_url = "https://placehold.co/600x400/2a2a2a/808080?text=Persona+Image"
-        cleaned_output = re.sub(
-            r"\[Generate and embed the image here.*?\]",
-            f"![Persona Image]({placeholder_url})",
-            text_output
-        )
-        
-        return cleaned_output
+    with cols[3]:
+        is_active = st.session_state.current_page == page_values[3]
+        if st.button(page_keys[3], key="nav_iphone", disabled=is_active):
+            navigate_to(page_values[3])
+            st.rerun()
+                
+    with cols[4]:
+        is_active = st.session_state.current_page == page_values[4]
+        if st.button(page_keys[4], key="nav_watch", disabled=is_active):
+            navigate_to(page_values[4])
+            st.rerun()
+                
+    with cols[5]:
+        is_active = st.session_state.current_page == page_values[5]
+        if st.button(page_keys[5], key="nav_airpods", disabled=is_active):
+            navigate_to(page_values[5])
+            st.rerun()
 
-    except Exception as e:
-        # st.error(f"An error occurred while calling the Gemini API: {e}")
-        return f"Error: Could not generate response. Details: {str(e)}"
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 4. PAGE FUNCTIONS ---
+# --- 3. PAGE CONTENT FUNCTIONS ---
 
 def main_page():
-    """The main Home page with the input form."""
+    """The main landing page with the hero section and input form."""
     create_main_navbar()
+    st.markdown('<div class="apple-hero-title">Introducing a New Era of Innovation.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="apple-hero-subtitle">First, let\'s define your brand. Start by describing your vision.</p>',
+        unsafe_allow_html=True
+    )
     
-    st.markdown('<h1 class="apple-hero-title">Startup Idea Accelerator</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="apple-hero-subtitle">Define your idea. We\'ll help you build the brand.</p>', unsafe_allow_html=True)
-
-    # Wrap the form in a custom container
-    st.markdown('<div class="brand-form-container">', unsafe_allow_html=True)
-    
+    # --- New Input Form ---
     with st.form(key="brand_form"):
-        # Get existing values from session state or use default placeholders
-        idea = st.session_state.get("startup_idea", "")
-        launch_plan = st.session_state.get("startup_launch_plan", "")
-
-        # Text area 1: The Idea
-        # Swapped: Placeholder is now the question, label is the title
-        startup_idea = st.text_area(
-            "What is your product or service? What makes your product unique? How will you sell it?",
-            value=idea,
-            placeholder="e.g., A subscription service for AI-powered coding tutors for high school students in India.",
-            key="startup_idea_input"
+        idea = st.text_area(
+            "What idea do you have in mind?", 
+            placeholder="What is your product or service? What makes your product unique? How will you sell it?",
+            height=100
+        )
+        # Updated this section as requested
+        launch_plan = st.text_area(
+            "What are your thoughts on a launch plan?", 
+            placeholder="Where are you launching first? Who is your ideal customer? Any constraints?",
+            height=100
         )
         
-        # Text area 2: The Launch Plan
-        # Swapped: Placeholder is now the question, label is the title
-        startup_launch_plan = st.text_area(
-            "Where are you launching first? Who is your ideal customer? Any constraints?",
-            value=launch_plan,
-            placeholder="e.g., Starting with a beta in Mumbai and Delhi, targeting parents of students in IB and CBSE schools.",
-            key="startup_launch_plan_input"
-        )
+        # Center the button
+        st.markdown('<div class="apple-primary-button-container" style="display: flex; justify-content: center;">', unsafe_allow_html=True)
+        submitted = st.form_submit_button("Generate Brand Identity", type="primary", disabled=not GEMINI_ENABLED)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        # Submit Button
-        submit_button = st.form_submit_button(label="Generate My Brand")
+        if submitted:
+            if not idea or not launch_plan:
+                st.error("Please fill out both fields to generate your brand identity.")
+            else:
+                st.session_state.startup_idea = idea
+                st.session_state.startup_launch_plan = launch_plan # Updated state variable
+                st.session_state.generating = True # Flag to show spinner on next page
+                navigate_to(PAGE_NAMES["Segment View"]) # FIXED: Was "Branding"
+                st.rerun()
 
-    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- 4. GEMINI API CALL FUNCTION ---
+
+def call_gemini_api(idea, launch_plan):
+    """
+    Calls the Gemini API with the formatted segmentation prompt.
+    """
+    if not GEMINI_ENABLED:
+        return "Error: Gemini API is not configured. Please check your API key."
+
+    # Format the prompt with user inputs
+    prompt = SEGMENTATION_PROMPT_TEMPLATE.format(idea=idea, launch_plan=launch_plan)
     
-    if submit_button:
-        # Save inputs to session state
-        st.session_state.startup_idea = startup_idea
-        st.session_state.startup_launch_plan = startup_launch_plan
-        
-        # Show a temporary spinner while generating
-        with st.spinner("Analyzing your idea and building brand strategy..."):
-            # Call Gemini to get the segmentation output
-            # This will run in the background and the result is implicitly
-            # stored for when the 'Segment View' page is loaded.
-            # We call it here to "warm up" the cache if needed, or just to run.
-            # A more robust way would be to store the output in session_state.
-            
-            segmentation_output = get_gemini_output(startup_idea, startup_launch_plan)
-            st.session_state.segmentation_output = segmentation_output
-        
-        # Use st.success for a clear confirmation
-        st.success("Your strategy is ready! Check out the 'Segment View' page.")
-        
-        # Automatically switch to the "Segment View" page
-        st.query_params["page"] = PAGE_NAMES["Branding"]
-        time.sleep(0.1) # Give streamlit time to register query param change
-        st.rerun()
+    try:
+        # Generate content
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"An error occurred while calling the Gemini API: {e}")
+        return f"Error: Could not generate content. {e}"
 
+
+# --- 5. PAGE CONTENT FUNCTIONS ---
 
 def page_a():
-    """'Segment View' Page (formerly Branding)"""
+    """Segment View Page / Brand Output Page"""
     create_main_navbar()
-    st.markdown(f'<h1 class="apple-page-title">{PAGE_NAMES["Branding"]}</h1>', unsafe_allow_html=True)
     
-    # Check if idea and launch plan are in session state
-    idea = st.session_state.get("startup_idea")
-    launch_plan = st.session_state.get("startup_launch_plan")
-    
-    if not idea or not launch_plan:
-        st.warning("Please fill out the form on the Home page first to generate your segmentation.")
-        return
-
-    # Check if output is already generated and cached in session state
-    if "segmentation_output" in st.session_state:
-        output = st.session_state.segmentation_output
+    # Check if we landed here from the form
+    if st.session_state.startup_idea and st.session_state.startup_launch_plan:
+        st.markdown('<h1 class="apple-page-title">Your Brand Identity</h1>', unsafe_allow_html=True)
+        
+        # Display the inputs
+        st.markdown(f"""
+        <div class="input-summary-section">
+            <h3>Startup Idea</h3>
+            <p>"{st.session_state.startup_idea}"</p>
+            <h3 style="margin-top: 1rem;">Launch Plan</h3>
+            <p>"{st.session_state.startup_launch_plan}"</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        output_placeholder = st.empty()
+        
+        if st.session_state.generating:
+            with st.spinner("Calling Gemini to generate your brand identity..."):
+                # Replaced mock function with live API call
+                segmentation_output = call_gemini_api(
+                    st.session_state.startup_idea, 
+                    st.session_state.startup_launch_plan
+                )
+                st.session_state.segmentation_output = segmentation_output # Store output
+                st.session_state.generating = False # Done generating
+        
+        # Display the generated output
+        if 'segmentation_output' in st.session_state:
+            # Render as Markdown, not in a <pre> tag
+            output_placeholder.markdown(
+                f'<div class="brand-output-section">{st.session_state.segmentation_output}</div>', 
+                unsafe_allow_html=True
+            )
+        
+        # Clear the inputs so refreshing the page doesn't re-run
+        # You might want to remove these lines if you want the data to persist
+        # st.session_state.startup_idea = None
+        # st.session_state.startup_launch_plan = None
+        
     else:
-        # If not, generate it now (e.g., if user bookmarks this page)
-        with st.spinner("Generating segmentation analysis..."):
-            output = get_gemini_output(idea, launch_plan)
-            st.session_state.segmentation_output = output
-
-    # Display the generated output in the custom container
-    st.markdown('<div class="brand-output-section">', unsafe_allow_html=True)
-    st.markdown(output, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        # Original "Branding" page content (was "Vision Pro")
+        st.markdown('<h1 class="apple-page-title">Segment View</h1>', unsafe_allow_html=True)
+        st.markdown("## Define Your Identity.")
+        st.markdown("""
+            <p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;">
+            <i>To generate a brand identity, please return to the <b>Home</b> page and fill out the form.</i>
+            </p>
+        """, unsafe_allow_html=True)
 
 
 def page_b():
-    """'Target Lens' Page (formerly MacBook)"""
+    """Target Lens Page"""
     create_main_navbar()
-    st.markdown(f'<h1 class="apple-page-title">{PAGE_NAMES["MacBook"]}</h1>', unsafe_allow_html=True)
-    st.markdown("## Power. It's in the Air.")
+    st.markdown('<h1 class="apple-page-title">Target Lens</h1>', unsafe_allow_html=True)
+    st.markdown("## Power. Efficiency. Pro.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
-        The new MacBook Air, supercharged by the M4 chip, brings astonishing performance and 
-        all-day battery life to an impossibly thin aluminum enclosure.
+        The MacBook Pro, supercharged by the M4 chip, delivers a staggering leap in performance and battery life. 
+        It is the ultimate notebook for professional creators and developers.
         </p>
         <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
-            <li>**M4 Chip:** Neural Engine for advanced AI tasks.</li>
-            <li>**Liquid Retina Display:** 13.6" or 15.3" with ProMotion.</li>
-            <li>**New Colors:** Midnight, Starlight, Space Gray, and Silver.</li>
+            <li>**Liquid Retina XDR:** The best display ever in a notebook.</li>
+            <li>**Neural Engine:** 16-core, for advanced machine learning tasks.</li>
+            <li>**Up to 22 Hours:** Unprecedented battery life on a single charge.</li>
         </ul>
     """, unsafe_allow_html=True)
+
 
 def page_c():
-    """'Market Radar' Page (formerly iPhone 16)"""
+    """Market Radar Page"""
     create_main_navbar()
-    st.markdown(f'<h1 class="apple-page-title">{PAGE_NAMES["iPhone 16"]}</h1>', unsafe_allow_html=True)
-    st.markdown("## A new era of intelligence.")
+    st.markdown('<h1 class="apple-page-title">Market Radar</h1>', unsafe_allow_html=True)
+    st.markdown("## A Giant Leap for Photography.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
-        iPhone 16 Pro integrates Apple Intelligence, a new standard for personal AI. 
-        The A18 Pro chip unlocks capabilities that are intuitive, powerful, and private.
+        The new camera system in iPhone 16 Pro brings light and detail to your images like never before. 
+        The Action button and USB-C port simplify everything.
         </p>
         <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
-            <li>**Apple Intelligence:** On-device processing for privacy.</li>
-            <li>**Pro Camera System:** 48MP Main with new anti-reflective coating.</li>
-            <li>**Action Button:** Now with more customizable shortcuts.</li>
+            <li>**A18 Bionic Chip:** Faster performance, superior gaming.</li>
+            <li>**ProMotion Display:** Adaptive 120Hz refresh rate.</li>
+            <li>**48MP Main Camera:** Unrivaled low-light performance.</li>
         </ul>
     """, unsafe_allow_html=True)
 
+
 def page_d():
-    """'Roadmap' Page (formerly Watch X)"""
+    """Roadmap Page"""
     create_main_navbar()
-    st.markdown(f'<h1 class="apple-page-title">{PAGE_NAMES["Watch X"]}</h1>', unsafe_allow_html=True)
-    st.markdown("## Redesigned. Reimagined.")
+    st.markdown('<h1 class="apple-page-title">Roadmap</h1>', unsafe_allow_html=True)
+    st.markdown("## Reimagined. Revolutionary.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
-        The 10th-anniversary Apple Watch X features the thinnest-ever case, a new magnetic 
-        band system, and breakthrough health monitoring.
+        Apple Watch X features an all-new design with a thinner case and a magnetic band attachment system. 
+        It’s the essential tool for a healthy and active life.
         </p>
         <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
-            <li>**S10 SiP:** Faster, more efficient processing.</li>
+            <li>**S10 Chip:** Faster, more efficient processing.</li>
             <li>**Blood Glucose Monitoring:** Non-invasive monitoring capability.</li>
             <li>**New Health Sensors:** Advanced crash-detection.</li>
         </ul>
@@ -582,9 +654,9 @@ def page_d():
 
     
 def page_e():
-    """'Pricing' Page (formerly AirPods Max)"""
+    """Pricing Page"""
     create_main_navbar()
-    st.markdown(f'<h1 class="apple-page-title">{PAGE_NAMES["AirPods Max"]} (Gen 2)</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="apple-page-title">Pricing</h1>', unsafe_allow_html=True)
     st.markdown("## Audio Purity. Redefined.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
@@ -599,43 +671,16 @@ def page_e():
     """, unsafe_allow_html=True)
 
 
-# --- 5. MAIN APPLICATION LOGIC ---
+# --- 6. MAIN APPLICATION LOGIC ---
 
-# Map page names to their corresponding functions
 page_functions = {
     PAGE_NAMES["Home"]: main_page,
-    PAGE_NAMES["Branding"]: page_a,
-    PAGE_NAMES["MacBook"]: page_b,
-    PAGE_NAMES["iPhone 16"]: page_c,
-    PAGE_NAMES["Watch X"]: page_d,
-    PAGE_NAMES["AirPods Max"]: page_e,
+    PAGE_NAMES["Segment View"]: page_a, # Updated
+    PAGE_NAMES["Target Lens"]: page_b, # Updated
+    PAGE_NAMES["Market Radar"]: page_c, # Updated
+    PAGE_NAMES["Roadmap"]: page_d, # Updated
+    PAGE_NAMES["Pricing"]: page_e, # Updated
 }
 
-def main():
-    st.set_page_config(page_title="Startup Accelerator", layout="wide")
-    inject_custom_css()
-
-    # --- Page Routing ---
-    # Use URL query parameters to determine which page to show
-    query_params = st.query_params
-    
-    if "page" in query_params:
-        # Get the page name from the URL query
-        page_name_from_query = query_params["page"]
-        
-        # Find the corresponding function
-        # This is a reverse lookup from the display name to the function
-        page_to_show = main_page # Default to home
-        for key, display_name in PAGE_NAMES.items():
-            if display_name == page_name_from_query:
-                page_to_show = page_functions[display_name]
-                break
-    else:
-        # Default to the Home page
-        page_to_show = main_page
-
-    # Run the selected page function
-    page_to_show()
-
-if __name__ == "__main__":
-    main()
+# Execute the function corresponding to the current page state
+page_functions[st.session_state.current_page]()
