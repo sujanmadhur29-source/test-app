@@ -346,7 +346,7 @@ try:
     # API_KEY = st.secrets["GEMINI_API_KEY"] # Replaced secret with hardcoded key
     API_KEY = "AIzaSyDkoQ2M7c7EcUFpLBTMvFlAXjMg1f2TUHI"
     genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
+    # model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025") # Removed: Model will be initialized in each function
     GEMINI_ENABLED = True
 except Exception as e:
     # Updated error message
@@ -457,8 +457,17 @@ Summarize:
 * Recommended price & distribution strategy.
 * Early creative tone suggestion.
 
-Step 6 | Output Formatting
-Return output as plain text sections:
+---
+### Step 6: Generated Visuals
+Based on all the analysis above, generate the following three images. Do not add any extra text, just the images.
+
+1.  **Market Perceptual Map:** A 2x2 matrix for the competitor landscape (e.g., axes: Price vs. Niche).
+2.  **Market Share Pie Chart:** An estimated market share pie chart for the identified competitors.
+3.  **Sentiment Word Clouds:** Two simple word clouds, one for Positive and one for Negative customer sentiment.
+---
+
+### Step 7: Output Formatting (Text)
+Return all text output from Steps 1-5 as plain text sections:
 Competitor Landscape Overview:
 <paragraph>
 Competitor Snapshots:
@@ -612,6 +621,9 @@ def get_segmentation_output(idea, launch_plan):
     if not GEMINI_ENABLED:
         return "Error: Gemini API is not configured. Please check your API key."
 
+    # --- ADDED: Initialize text model ---
+    model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
+
     # Format the prompt with user inputs
     prompt = SEGMENTATION_PROMPT_TEMPLATE.format(idea=idea, launch_plan=launch_plan)
     
@@ -634,21 +646,42 @@ def get_segmentation_output(idea, launch_plan):
 def get_target_lens_output(segmentation_data: str):
     """
     Calls the Gemini API with the Target Lens prompt, using segmentation
-    data as context.
+    data as context. Now returns both text and images.
     """
     if not GEMINI_ENABLED:
-        return "Error: Gemini API is not configured. Please check your API key."
+        return {"text": "Error: Gemini API is not configured.", "images": []}
         
+    # --- MODEL CHANGED HERE ---
+    model = genai.GenerativeModel("gemini-2.5-flash-image-preview")
+    
     # Format the prompt with the segmentation output
     prompt = TL_PROMPT_TEMPLATE.format(segmentation_data=segmentation_data)
     
     try:
-        # Generate content
-        response = model.generate_content(prompt)
-        return response.text
+        # --- GENERATION CALL CHANGED HERE ---
+        generation_config = {"responseModalities": ["TEXT", "IMAGE"]}
+        response = model.generate_content(prompt, generation_config=generation_config)
+        
+        # --- RESPONSE PROCESSING CHANGED HERE ---
+        text_output = ""
+        image_outputs = []
+        
+        if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+            for part in response.candidates[0].content.parts:
+                if 'text' in part:
+                    text_output += part.text + "\n"
+                elif 'inlineData' in part:
+                    img_data = part.inlineData
+                    base64_data = img_data.data
+                    mime_type = img_data.mimeType
+                    image_url = f"data:{mime_type};base64,{base64_data}"
+                    image_outputs.append(image_url)
+                    
+        return {"text": text_output, "images": image_outputs}
+
     except Exception as e:
         st.error(f"An error occurred while calling the Gemini API: {e}")
-        return f"Error: Could not generate content. {e}"
+        return {"text": f"Error: Could not generate content. {e}", "images": []}
 
 
 # --- 5. PAGE CONTENT FUNCTIONS ---
@@ -710,7 +743,7 @@ def page_a():
 
 
 def page_b():
-    """Target Lens Page - NOW DYNAMIC"""
+    """Target Lens Page - NOW DYNAMIC with Text and Images"""
     create_main_navbar()
     st.markdown('<h1 class="apple-page-title">Target Lens</h1>', unsafe_allow_html=True)
     
@@ -730,10 +763,37 @@ def page_b():
         
         # Check if the output for this page already exists
         if st.session_state.target_lens_output:
-            output_placeholder.markdown(
-                f'<div class="brand-output-section">{st.session_state.target_lens_output}</div>', 
-                unsafe_allow_html=True
-            )
+            # --- RENDER LOGIC CHANGED HERE ---
+            output_data = st.session_state.target_lens_output
+            text_output = output_data.get("text")
+            image_output = output_data.get("images", [])
+
+            with output_placeholder.container():
+                if text_output:
+                    st.markdown(
+                        f'<div class="brand-output-section">{text_output}</div>', 
+                        unsafe_allow_html=True
+                    )
+                
+                if image_output:
+                    st.markdown('<div class="brand-output-section" style="margin-top: 2rem;">', unsafe_allow_html=True)
+                    st.markdown("<h3>Generated Visuals</h3>", unsafe_allow_html=True)
+                    # Display images in columns for better layout
+                    
+                    # Ensure we have at least 1 column
+                    num_cols = len(image_output) if len(image_output) > 0 else 1
+                    cols = st.columns(num_cols)
+                    
+                    for i, img_url in enumerate(image_output):
+                        # Use modulo for safety in case num_cols is 0, though we guard for it
+                        with cols[i % num_cols]:
+                            st.image(img_url, use_column_width=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                
+                if not text_output and not image_output:
+                    st.warning("Generation complete, but no content was returned. The prompt might need adjustment.")
+            # --- END OF RENDER LOGIC CHANGE ---
+        
         # If it's currently generating, show a spinner
         elif st.session_state.generating:
              output_placeholder.info("Your analysis is being generated. Please wait...")
