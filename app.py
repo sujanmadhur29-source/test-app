@@ -550,6 +550,40 @@ Strategic Implications:
 * Output must be clean and ready for dashboard rendering.
 """
 
+# --- NEW: Market Radar Prompt (MRPrompt1) ---
+MR_PROMPT_TEMPLATE = """
+You are a Brand Positioning & Targeting Strategist with access to GenAI and audience/data tools (Relevance AI, Meta Audience Insights, Google Ads, Similarweb) .
+
+Your task:
+Build a fully-formed Positioning & Targeting Strategy for the startup below, including actionable visuals that can be downloaded.
+
+---
+
+### Step 1 | Input Recap
+
+Retrieve and summarize the following variables from the user's provided context:
+Product Context: [E.g., RTD Beverage, D2C Apparel, B2B SaaS Tool]
+Geography: [E.g., USA (California), India (Tier 1 Metros), Global]
+Model: [E.g., B2C D2C + Retail, B2B Subscription]
+Budget (Monthly Marketing): [E.g., ₹5,00,000, $50,000]
+Target segments: [List the 2–3 prioritized segments identified in prior analysis]
+Competitor Set: [List 3–5 direct and indirect competitors]
+Category Drivers: [List 3–5 key factors influencing purchase decisions, e.g., Price, Speed, Sustainability]
+
+---
+
+### Step 2 | Audience Refinement (GenAI & Data)
+For each target segment:
+• Derive Audience DNA: demographics, top interests, reach/CPM, negative audiences  
+• Estimate CPM/CPC, CTR, CVR (mark **ASSUMED** if no exact data)  
+• Provide summary:  
+  - Audience DNA paragraph  
+  - Top 5 interests/keywords with source  
+  - Estimated Reach, CPM (₹), CPC (₹), Channels  
+
+Restrict at Step2 in this response. Don’t ask additional questions at the end.
+"""
+
 
 # --- 3. STATE AND NAVIGATION FUNCTIONS ---
 
@@ -577,6 +611,9 @@ if 'segmentation_output' not in st.session_state:
     st.session_state.segmentation_output = None
 if 'target_lens_output' not in st.session_state:
     st.session_state.target_lens_output = None
+# --- NEW: Session state for Market Radar ---
+if 'market_radar_output' not in st.session_state:
+    st.session_state.market_radar_output = None
 
 
 def navigate_to(page_key):
@@ -636,14 +673,6 @@ def main_page():
     """The main landing page with the hero section and input form."""
     
     # --- REMOVED: Logo from homepage body ---
-    # col1, col2, col3 = st.columns([1, 2, 1]) # Create a wider middle column
-    # with col2:
-    #     # Assuming StartWiseLogo.jpeg is in the same directory as app.py
-    #     try:
-    #         st.image("StartWiseLogo.jpeg", width=300) # Set width for consistent size
-    #     except FileNotFoundError:
-    #         st.error("Logo file 'StartWiseLogo.jpeg' not found.")
-    # --- END: Logo Removed ---
     
     create_main_navbar()
     st.markdown('<div class="apple-hero-title">Introducing a New Era of Innovation.</div>', unsafe_allow_html=True)
@@ -679,9 +708,10 @@ def main_page():
                 st.session_state.startup_launch_plan = launch_plan # Updated state variable
                 st.session_state.generating = True # Flag to show spinner on next page
                 
-                # Clear old outputs on new submission
+                # --- UPDATED: Clear all old outputs on new submission ---
                 st.session_state.segmentation_output = None
                 st.session_state.target_lens_output = None
+                st.session_state.market_radar_output = None # --- NEW ---
                 
                 navigate_to(PAGE_NAMES["Segment View"]) # FIXED: Was "Branding"
                 st.rerun()
@@ -758,6 +788,29 @@ def get_target_lens_output(segmentation_data: str):
         st.error(f"An error occurred while calling the Gemini API: {e}")
         return {"text": f"Error: Could not generate content. {e}", "images": []}
 
+# --- NEW: Market Radar Gemini Function ---
+def get_market_radar_output(segmentation_data: str):
+    """
+    Calls the Gemini API with the Market Radar (MR) prompt, using
+    segmentation data as context. Returns text only.
+    """
+    if not GEMINI_ENABLED:
+        return "Error: Gemini API is not configured. Please check your API key."
+
+    # Initialize the text model
+    model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
+    
+    # Format the prompt with the segmentation output
+    prompt = MR_PROMPT_TEMPLATE.format(segmentation_data=segmentation_data)
+    
+    try:
+        # Generate content
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"An error occurred while calling the Gemini API for Market Radar: {e}")
+        return f"Error: Could not generate Market Radar content. {e}"
+
 
 # --- 5. PAGE CONTENT FUNCTIONS ---
 
@@ -781,20 +834,37 @@ def page_a():
         
         output_placeholder = st.empty()
         
-        # Check if we are generating for the first time
+        # --- UPDATED: Generation block for all three APIs ---
         if st.session_state.generating:
-            with st.spinner("Calling Gemini to generate brand identity and competitive analysis..."):
+            with st.spinner("Generating Brand Strategy (3 steps)..."):
                 # 1. Call Segmentation API
+                st.write("Step 1/3: Generating Market Segmentation...")
                 segmentation_output = get_segmentation_output(
                     st.session_state.startup_idea, 
                     st.session_state.startup_launch_plan
                 )
                 st.session_state.segmentation_output = segmentation_output
                 
-                # 2. Call Target Lens API, feeding in the output from step 1
-                target_lens_output = get_target_lens_output(segmentation_output)
-                st.session_state.target_lens_output = target_lens_output
+                # Check if step 1 succeeded before proceeding
+                if segmentation_output and not segmentation_output.startswith("Error:"):
+                    # 2. Call Target Lens API
+                    st.write("Step 2/3: Generating Competitive Analysis...")
+                    target_lens_output = get_target_lens_output(segmentation_output)
+                    st.session_state.target_lens_output = target_lens_output
+                    
+                    # 3. Call Market Radar API
+                    st.write("Step 3/3: Generating Positioning Strategy...")
+                    market_radar_output = get_market_radar_output(segmentation_output)
+                    st.session_state.market_radar_output = market_radar_output
+                    
+                    st.write("Generation complete!")
                 
+                else:
+                    # Handle segmentation error
+                    st.error("Error during Step 1: Segmentation. Halting generation.")
+                    st.session_state.target_lens_output = {"text": "Error: Could not generate Target Lens data because Segmentation failed.", "images": []}
+                    st.session_state.market_radar_output = "Error: Could not generate Market Radar data because Segmentation failed."
+
                 st.session_state.generating = False # Done generating
         
         # Display the generated output for *this page*
@@ -887,21 +957,47 @@ def page_b():
 
 
 def page_c():
-    """Market Radar Page"""
+    """--- NEW: Market Radar Page (Dynamic) ---"""
     create_main_navbar()
     st.markdown('<h1 class="apple-page-title">Market Radar</h1>', unsafe_allow_html=True)
-    st.markdown("## A Giant Leap for Photography.")
-    st.markdown("""
-        <p style="font-size: 1.1rem; color: #E0E0E0;">
-        The new camera system in iPhone 16 Pro brings light and detail to your images like never before. 
-        The Action button and USB-C port simplify everything.
-        </p>
-        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
-            <li>**A18 Bionic Chip:** Faster performance, superior gaming.</li>
-            <li>**ProMotion Display:** Adaptive 120Hz refresh rate.</li>
-            <li>**48MP Main Camera:** Unrivaled low-light performance.</li>
-        </ul>
-    """, unsafe_allow_html=True)
+    
+    # Check if inputs exist
+    if st.session_state.startup_idea and st.session_state.startup_launch_plan:
+        # Display the inputs for context
+        st.markdown(f"""
+        <div class="input-summary-section">
+            <h3>Startup Idea</h3>
+            <p>"{st.session_state.startup_idea}"</p>
+            <h3 style="margin-top: 1rem;">Launch Plan</h3>
+            <p>"{st.session_state.startup_launch_plan}"</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        output_placeholder = st.empty()
+        
+        # Check if the output for this page already exists
+        if st.session_state.market_radar_output:
+            output_placeholder.markdown(
+                f'<div class="brand-output-section">{st.session_state.market_radar_output}</div>', 
+                unsafe_allow_html=True
+            )
+        
+        # If it's currently generating, show a spinner
+        elif st.session_state.generating:
+             output_placeholder.info("Your analysis is being generated. Please wait...")
+        
+        # Fallback: If output doesn't exist but inputs do (e.g., error in first step)
+        else:
+            output_placeholder.warning("Could not find generated analysis. Please try submitting the form again from the Home page.")
+            
+    else:
+        # Default content if no inputs
+        st.markdown("## Define Your Positioning.")
+        st.markdown("""
+            <p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;">
+            <i>To generate a positioning and targeting strategy, please return to the <b>Home</b> page and fill out the form.</i>
+            </p>
+        """, unsafe_allow_html=True)
 
 
 def page_d():
