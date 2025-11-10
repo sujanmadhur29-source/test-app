@@ -12,9 +12,8 @@ def get_image_as_base64(file_path):
         with open(file_path, "rb") as img_file:
             return f"data:image/jpeg;base64,{base64.b64encode(img_file.read()).decode()}"
     except FileNotFoundError:
-        # Don't throw a blocking error, just log to console or return empty
-        # st.error(f"Logo file '{file_path}' not found.") # Avoids blocking UI
-        print(f"Warning: Logo file '{file_path}' not found.")
+        # --- CHANGED: Make error visible to user ---
+        st.error(f"Logo file '{file_path}' not found. Please ensure 'StartWiseLogo.jpeg' is in the same directory as 'app.py'.")
         return "" # Return empty string on error
 
 # Get the base64 string for the logo
@@ -360,26 +359,34 @@ LOGO_BUTTON_STYLE = f"""
     /* --- NEW: Style for the Home Logo Button (targets first column) --- */
     .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button {{
         background-image: url("{logo_base64}");
-        background-size: contain;
+        
+        /* --- KEPT: 'contain' is correct to fit without distortion --- */
+        background-size: contain; 
+        
         background-repeat: no-repeat;
         background-position: center;
         color: transparent !important; /* Hide the text "Home" */
         width: 100%; /* Use full column width */
         height: 40px; /* Set a fixed height */
         border: none !important;
-        background-color: transparent !important;
+        
+        /* --- ADDED: Fallback color if image fails to load --- */
+        background-color: #2a2a2a !important; 
+        
         padding: 0 !important;
     }}
     
     .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:hover {{
-        background-color: transparent !important;
-        opacity: 0.8; /* Add hover effect */
+        /* --- CHANGED: Added fallback color --- */
+        background-color: #333333 !important; /* Darker hover */
+        opacity: 0.8; /* Add hover effect to image */
         color: transparent !important;
         border: none !important;
     }}
     
     .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:disabled {{
-        background-color: transparent !important;
+        /* --- CHANGED: Added fallback color --- */
+        background-color: #2a2a2a !important; /* Same as default */
         opacity: 1.0; /* Full opacity when active */
         color: transparent !important;
         border: none !important;
