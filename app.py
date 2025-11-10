@@ -583,9 +583,9 @@ def main_page():
     # --- END: Logo ---
     
     create_main_navbar()
-    st.markdown('<div class="apple-hero-title">Introducing a New Era of Innovation.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="apple-hero-title">Build smarter, launch faster.</div>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="apple-hero-subtitle">First, let\'s define your brand. Start by describing your vision.</p>',
+        '<p class="apple-hero-subtitle">Tell us what your brand stands for, and we’ll do the rest.</p>',
         unsafe_allow_html=True
     )
     
