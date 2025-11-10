@@ -420,6 +420,8 @@ To deliver a comprehensive, insight-driven competitor landscape report based on 
 ### YOUR TASK
 Based *only* on the context above (startup idea, target market, personas), generate the following competitive analysis:
 
+i.
+
 Step 1 | Competitor Identification
 * Identify 5–7 direct and indirect competitors in the same product category and geography.
 * Mention each brand’s focus (e.g., RTD coffee, café chain, functional beverage).
@@ -485,6 +487,24 @@ Strategic Implications:
 * Use realistic data and inferred logic when APIs don’t return live metrics.
 * Maintain professional, insight-led tone.
 * Output must be clean and ready for dashboard rendering.
+
+
+ii.
+
+ 
+based on output of above Competitive Intelligence and Marketing Landscape Analyst, generate Competitor  The Market Perceptual Map (or 2x2 Matrix) image. dont give additional text.
+
+
+iii.
+
+based on output of above Competitive Intelligence and Marketing Landscape Analyst, generate  The Market Share Pie Chart image. dont give additional text.
+
+
+
+iv.
+based on output of above Competitive Intelligence and Marketing Landscape Analyst, generate Customer Sentiment English Word Clouds (Positive vs. Negative) image.
+
+
 """
 
 
