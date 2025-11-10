@@ -326,24 +326,29 @@ APPLE_TAILWIND_CSS = """
 
     /* NEW: Styling for tables to prevent overflow */
     .brand-output-section table {
-        display: block; /* Makes the table scrollable */
+        display: block;
         width: 100%;
-        overflow-x: auto; /* Adds horizontal scroll if needed */
+        overflow-x: auto;
         border-collapse: collapse;
         margin-top: 1rem;
         margin-bottom: 1rem;
-        border: 1px solid #333; /* Border to match theme */
-        border-radius: 8px; /* Match other elements */
+        border: 1px solid #333;
+        border-radius: 8px;
+        table-layout: fixed;            /* NEW: keeps columns sane */
     }
 
     .brand-output-section th,
     .brand-output-section td {
-        border-bottom: 1px solid #333; /* Cell borders */
-        padding: 0.75rem 1rem; /* Spacing */
+        border-bottom: 1px solid #333;
+        padding: 0.75rem 1rem;
         color: #E0E0E0;
-        white-space: nowrap; /* Prevents text from wrapping and breaking layout */
+        white-space: normal;            /* NEW: allow wrapping */
+        overflow-wrap: anywhere;        /* NEW: break very long tokens */
+        word-break: break-word;         /* NEW: fallback for older content */
         border-left: 1px solid #333;
+        vertical-align: top;            /* NEW: nicer multi-line cells */
     }
+
     
     .brand-output-section td:first-child,
     .brand-output-section th:first-child {
@@ -751,29 +756,35 @@ def main_page():
 # --- 4. GEMINI API CALL FUNCTION ---
 
 def get_segmentation_output(idea, launch_plan):
-    """
-    Calls the Gemini API with the formatted segmentation prompt.
-    """
     if not GEMINI_ENABLED:
         return "Error: Gemini API is not configured. Please check your API key."
 
-    # --- ADDED: Initialize text model ---
     model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
-
-    # Format the prompt with user inputs
     prompt = SEGMENTATION_PROMPT_TEMPLATE.format(idea=idea, launch_plan=launch_plan)
-    
+
     try:
-        # Generate content
         response = model.generate_content(prompt)
-        # A simple regex to replace placeholder image prompts with actual placeholder images
-        placeholder_url = "https://placehold.co/600x400/2a2a2a/808080?text=Persona+Image"
-        cleaned_output = re.sub(
-            r"\[Generate and embed the image here.*?\]",
-            f"![Persona Image]({placeholder_url})",
-            response.text
+        text = response.text or ""
+
+        # 1) Replace placeholder image instructions
+        placeholder_url = "https://placehold.co/300x300/E0E0E0/000000?text=Persona"
+        text = re.sub(
+            r"\[Generate.*?Image.*?\]",
+            f'<img src="{placeholder_url}" alt="Persona Image" />',
+            text,
+            flags=re.IGNORECASE | re.DOTALL
         )
-        return cleaned_output
+
+        # 2) Convert "Generated Persona Image: <URL>" into an actual image
+        text = re.sub(
+            r"Generated Persona Image\s*:\s*(https?://\S+)",
+            r'<img src="\1" alt="Persona Image" />',
+            text,
+            flags=re.IGNORECASE
+        )
+
+        return text
+
     except Exception as e:
         st.error(f"An error occurred while calling the Gemini API: {e}")
         return f"Error: Could not generate content. {e}"
