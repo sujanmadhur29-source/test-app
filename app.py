@@ -420,8 +420,6 @@ To deliver a comprehensive, insight-driven competitor landscape report based on 
 ### YOUR TASK
 Based *only* on the context above (startup idea, target market, personas), generate the following competitive analysis:
 
-i.
-
 Step 1 | Competitor Identification
 * Identify 5–7 direct and indirect competitors in the same product category and geography.
 * Mention each brand’s focus (e.g., RTD coffee, café chain, functional beverage).
@@ -487,24 +485,16 @@ Strategic Implications:
 * Use realistic data and inferred logic when APIs don’t return live metrics.
 * Maintain professional, insight-led tone.
 * Output must be clean and ready for dashboard rendering.
+"""
 
+# --- NEW: TLPrompt2 (Focused Map Prompt) ---
+TL_PROMPT_TEMPLATE_2 = """
+Based on the following competitive analysis output, generate *only* a Competitor The Market Perceptual Map (or 2x2 Matrix) image. Do not give any additional text.
 
-ii.
-
- 
-based on output of above Competitive Intelligence and Marketing Landscape Analyst, generate Competitor  The Market Perceptual Map (or 2x2 Matrix) image. dont give additional text.
-
-
-iii.
-
-based on output of above Competitive Intelligence and Marketing Landscape Analyst, generate  The Market Share Pie Chart image. dont give additional text.
-
-
-
-iv.
-based on output of above Competitive Intelligence and Marketing Landscape Analyst, generate Customer Sentiment English Word Clouds (Positive vs. Negative) image.
-
-
+---
+ANALYSIS CONTEXT:
+{tl_text_data}
+---
 """
 
 
@@ -534,6 +524,8 @@ if 'segmentation_output' not in st.session_state:
     st.session_state.segmentation_output = None
 if 'target_lens_output' not in st.session_state:
     st.session_state.target_lens_output = None
+if 'target_lens_map_image' not in st.session_state: # NEW state for the focused map
+    st.session_state.target_lens_map_image = None
 
 
 def navigate_to(page_key):
@@ -627,6 +619,7 @@ def main_page():
                 # Clear old outputs on new submission
                 st.session_state.segmentation_output = None
                 st.session_state.target_lens_output = None
+                st.session_state.target_lens_map_image = None # NEW: Clear focused map
                 
                 navigate_to(PAGE_NAMES["Segment View"]) # FIXED: Was "Branding"
                 st.rerun()
@@ -704,6 +697,38 @@ def get_target_lens_output(segmentation_data: str):
         return {"text": f"Error: Could not generate content. {e}", "images": []}
 
 
+# --- NEW: Target Lens 2 Gemini Function ---
+def get_target_lens_map_image(tl_text_data: str):
+    """
+    Calls the Gemini API with a focused prompt to *only* generate a perceptual map image.
+    """
+    if not GEMINI_ENABLED:
+        return None
+        
+    model = genai.GenerativeModel("gemini-2.5-flash-image-preview")
+    
+    prompt = TL_PROMPT_TEMPLATE_2.format(tl_text_data=tl_text_data)
+    
+    try:
+        # Request *only* an image
+        generation_config = {"responseModalities": ["IMAGE"]}
+        response = model.generate_content(prompt, generation_config=generation_config)
+        
+        if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+            for part in response.candidates[0].content.parts:
+                if 'inlineData' in part:
+                    img_data = part.inlineData
+                    base64_data = img_data.data
+                    mime_type = img_data.mimeType
+                    image_url = f"data:{mime_type};base64,{base64_data}"
+                    return image_url # Return the first image found
+        return None # No image found
+
+    except Exception as e:
+        st.error(f"An error occurred while generating the map image: {e}")
+        return None
+
+
 # --- 5. PAGE CONTENT FUNCTIONS ---
 
 def page_a():
@@ -728,7 +753,7 @@ def page_a():
         
         # Check if we are generating for the first time
         if st.session_state.generating:
-            with st.spinner("Calling Gemini to generate brand identity and competitive analysis..."):
+            with st.spinner("Generating full analysis (3 steps)..."): # Updated spinner text
                 # 1. Call Segmentation API
                 segmentation_output = get_segmentation_output(
                     st.session_state.startup_idea, 
@@ -736,9 +761,16 @@ def page_a():
                 )
                 st.session_state.segmentation_output = segmentation_output
                 
-                # 2. Call Target Lens API, feeding in the output from step 1
+                # 2. Call Target Lens API (Text + 3 Images)
                 target_lens_output = get_target_lens_output(segmentation_output)
                 st.session_state.target_lens_output = target_lens_output
+                
+                # 3. Call Target Lens 2 API (Focused Map Image)
+                if target_lens_output and target_lens_output.get("text"):
+                    map_image_url = get_target_lens_map_image(target_lens_output.get("text"))
+                    st.session_state.target_lens_map_image = map_image_url
+                else:
+                    st.session_state.target_lens_map_image = None
                 
                 st.session_state.generating = False # Done generating
         
@@ -765,7 +797,7 @@ def page_a():
 def page_b():
     """Target Lens Page - NOW DYNAMIC with Text and Images"""
     create_main_navbar()
-    st.markdown('<h1 class="apple-page-title">Target Lens</h1>', unsafe_allow_html=True)
+        st.markdown('<h1 class="apple-page-title">Target Lens</h1>', unsafe_allow_html=True)
     
     # Check if inputs exist
     if st.session_state.startup_idea and st.session_state.startup_launch_plan:
@@ -797,7 +829,7 @@ def page_b():
                 
                 if image_output:
                     st.markdown('<div class="brand-output-section" style="margin-top: 2rem;">', unsafe_allow_html=True)
-                    st.markdown("<h3>Generated Visuals</h3>", unsafe_allow_html=True)
+                    st.markdown("<h3>Generated Visuals (from Step 1)</h3>", unsafe_allow_html=True)
                     # Display images in columns for better layout
                     
                     # Ensure we have at least 1 column
@@ -810,8 +842,16 @@ def page_b():
                             st.image(img_url, use_column_width=True)
                     st.markdown('</div>', unsafe_allow_html=True)
                 
+                # --- NEW BLOCK TO RENDER THE 3RD API CALL ---
+                if st.session_state.target_lens_map_image:
+                    st.markdown('<div class="brand-output-section" style="margin-top: 2rem;">', unsafe_allow_html=True)
+                    st.markdown("<h3>Focused Market Perceptual Map (from Step 2)</h3>", unsafe_allow_html=True)
+                    st.image(st.session_state.target_lens_map_image, use_column_width="auto")
+                    st.markdown('</div>', unsafe_allow_html=True)
+                # --- END OF NEW BLOCK ---
+
                 if not text_output and not image_output:
-                    st.warning("Generation complete, but no content was returned. The prompt might need adjustment.")
+                    st.warning("Generation complete, but no content was returned from step 1. The prompt might need adjustment.")
             # --- END OF RENDER LOGIC CHANGE ---
         
         # If it's currently generating, show a spinner
