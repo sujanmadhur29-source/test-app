@@ -3,6 +3,24 @@ import time
 import google.generativeai as genai
 import os
 import re # Added re for placeholder URL replacement
+import base64 # --- ADDED: For logo encoding ---
+
+# --- NEW: Function to encode logo ---
+def get_image_as_base64(file_path):
+    """Reads an image file and returns it as a base64 encoded data URI."""
+    try:
+        with open(file_path, "rb") as img_file:
+            return f"data:image/jpeg;base64,{base64.b64encode(img_file.read()).decode()}"
+    except FileNotFoundError:
+        # Don't throw a blocking error, just log to console or return empty
+        # st.error(f"Logo file '{file_path}' not found.") # Avoids blocking UI
+        print(f"Warning: Logo file '{file_path}' not found.")
+        return "" # Return empty string on error
+
+# Get the base64 string for the logo
+LOGO_FILE = "StartWiseLogo.jpeg"
+logo_base64 = get_image_as_base64(LOGO_FILE)
+
 
 # --- 1. CONFIGURATION AND STYLING (MIMICKING APPLE/TAILWIND) ---
 
@@ -335,9 +353,47 @@ APPLE_TAILWIND_CSS = """
 </style>
 """
 
+# --- NEW: Logo Button Style ---
+# We inject this dynamically after the main CSS block
+LOGO_BUTTON_STYLE = f"""
+<style>
+    /* --- NEW: Style for the Home Logo Button (targets first column) --- */
+    .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button {{
+        background-image: url("{logo_base64}");
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        color: transparent !important; /* Hide the text "Home" */
+        width: 100%; /* Use full column width */
+        height: 40px; /* Set a fixed height */
+        border: none !important;
+        background-color: transparent !important;
+        padding: 0 !important;
+    }}
+    
+    .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:hover {{
+        background-color: transparent !important;
+        opacity: 0.8; /* Add hover effect */
+        color: transparent !important;
+        border: none !important;
+    }}
+    
+    .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:disabled {{
+        background-color: transparent !important;
+        opacity: 1.0; /* Full opacity when active */
+        color: transparent !important;
+        border: none !important;
+        cursor: default !important;
+    }}
+</style>
+"""
+
 # Apply the custom CSS at the start
 st.set_page_config(layout="wide", page_title="Brand Generator App")
 st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
+# --- ADDED: Inject the logo style ---
+if logo_base64: # Only inject if logo was found
+    st.markdown(LOGO_BUTTON_STYLE, unsafe_allow_html=True)
 
 # --- 2. GEMINI API CONFIGURATION ---
 
@@ -523,7 +579,8 @@ def navigate_to(page_key):
 def create_main_navbar():
     """Creates the static horizontal navigation bar."""
     st.markdown('<div class="apple-nav-container">', unsafe_allow_html=True)
-    cols = st.columns(6)
+    # --- CHANGED: Column ratios to give logo less space ---
+    cols = st.columns([1, 2, 2, 2, 2, 2])
     
     page_keys = list(PAGE_NAMES.keys()) # ["Home", "Branding", ...]
     page_values = list(PAGE_NAMES.values()) # ["main_page", "page_a", ...]
@@ -571,21 +628,20 @@ def create_main_navbar():
 def main_page():
     """The main landing page with the hero section and input form."""
     
-    # --- ADDED: Logo ---
-    # Center the logo using columns. 
-    col1, col2, col3 = st.columns([1, 2, 1]) # Create a wider middle column
-    with col2:
-        # Assuming StartWiseLogo.jpeg is in the same directory as app.py
-        try:
-            st.image("StartWiseLogo.jpeg", width=300) # Set width for consistent size
-        except FileNotFoundError:
-            st.error("Logo file 'StartWiseLogo.jpeg' not found.")
-    # --- END: Logo ---
+    # --- REMOVED: Logo from homepage body ---
+    # col1, col2, col3 = st.columns([1, 2, 1]) # Create a wider middle column
+    # with col2:
+    #     # Assuming StartWiseLogo.jpeg is in the same directory as app.py
+    #     try:
+    #         st.image("StartWiseLogo.jpeg", width=300) # Set width for consistent size
+    #     except FileNotFoundError:
+    #         st.error("Logo file 'StartWiseLogo.jpeg' not found.")
+    # --- END: Logo Removed ---
     
     create_main_navbar()
-    st.markdown('<div class="apple-hero-title">Build smarter, launch faster.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="apple-hero-title">Introducing a New Era of Innovation.</div>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="apple-hero-subtitle">Tell us what your brand stands for, and we’ll do the rest.</p>',
+        '<p class="apple-hero-subtitle">First, let\'s define your brand. Start by describing your vision.</p>',
         unsafe_allow_html=True
     )
     
