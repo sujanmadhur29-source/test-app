@@ -173,6 +173,7 @@ APPLE_TAILWIND_CSS = """
         color: #AAAAAA;
         font-weight: 500;
         padding-bottom: 5px;
+        font-size: 1.2rem !important; /* Increased font size */
     }
 
     /* 7. Primary Action Button (for 'Generate') - Primary Style */
@@ -675,9 +676,9 @@ def main_page():
     # --- REMOVED: Logo from homepage body ---
     
     create_main_navbar()
-    st.markdown('<div class="apple-hero-title">Introducing a New Era of Innovation.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="apple-hero-title">Build smarter, launch faster.</div>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="apple-hero-subtitle">First, let\'s define your brand. Start by describing your vision.</p>',
+        '<p class="apple-hero-subtitle">Tell us what your brand stands for, and we’ll do the rest.</p>',
         unsafe_allow_html=True
     )
     
@@ -764,8 +765,9 @@ def get_target_lens_output(segmentation_data: str):
     
     try:
         # --- GENERATION CALL CHANGED HERE ---
-        generation_config = {"responseModalities": ["TEXT", "IMAGE"]}
-        response = model.generate_content(prompt, generation_config=generation_config)
+        # Removed the 'generation_config' with 'responseModalities' as it caused the error.
+        # The 'gemini-2.5-flash-image-preview' model automatically handles multiple modalities.
+        response = model.generate_content(prompt)
         
         # --- RESPONSE PROCESSING CHANGED HERE ---
         text_output = ""
