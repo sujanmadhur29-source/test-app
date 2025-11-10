@@ -570,6 +570,18 @@ def create_main_navbar():
 
 def main_page():
     """The main landing page with the hero section and input form."""
+    
+    # --- ADDED: Logo ---
+    # Center the logo using columns. 
+    col1, col2, col3 = st.columns([1, 2, 1]) # Create a wider middle column
+    with col2:
+        # Assuming StartWiseLogo.jpeg is in the same directory as app.py
+        try:
+            st.image("StartWiseLogo.jpeg", width=300) # Set width for consistent size
+        except FileNotFoundError:
+            st.error("Logo file 'StartWiseLogo.jpeg' not found.")
+    # --- END: Logo ---
+    
     create_main_navbar()
     st.markdown('<div class="apple-hero-title">Introducing a New Era of Innovation.</div>', unsafe_allow_html=True)
     st.markdown(
