@@ -15,7 +15,7 @@ APPLE_TAILWIND_CSS = """
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
     
     html, body, [data-testid="stAppViewContainer"] {
-        background-color: #000000; /* Pure Black for contrast */
+        background-color: #02006c; /* NEW: Dark Blue Background */
         color: #FFFFFF;
         font-family: 'Inter', sans-serif;
     }
@@ -91,7 +91,7 @@ APPLE_TAILWIND_CSS = """
     .stTextArea label, .stTextInput label {
         color: #FFFFFF !important;
         font-weight: 600;
-        font-size: 1.1rem;
+        font-size: 16px !important; /* NEW: Set font size to 16px */
     }
     
     /* Make text area placeholder text smaller and italic */
