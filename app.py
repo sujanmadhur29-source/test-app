@@ -49,8 +49,10 @@ APPLE_TAILWIND_CSS = """
         font-size: 4rem;
         font-weight: 700;
         line-height: 1.1;
-        text-align: center;
-        margin-bottom: 1rem;
+        /* text-align: center; <-- CHANGED */
+        text-align: left; 
+        /* margin-bottom: 1rem; <-- CHANGED */
+        margin-bottom: 0;
         background: linear-gradient(180deg, #FFFFFF, #B0B0B0);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -64,6 +66,22 @@ APPLE_TAILWIND_CSS = """
         margin: 0 auto 3rem auto;
     }
     
+    /* --- NEW: Hero container with logo --- */
+    .apple-hero-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem; /* Space between logo and text */
+        margin-bottom: 1rem;
+    }
+    
+    .apple-hero-container img {
+        width: 90px;
+        height: 90px;
+        border-radius: 12px; 
+        flex-shrink: 0; /* Prevent logo from shrinking */
+    }
+
     .apple-page-title {
         font-size: 3rem;
         font-weight: 700;
@@ -173,7 +191,7 @@ APPLE_TAILWIND_CSS = """
         color: #AAAAAA;
         font-weight: 500;
         padding-bottom: 5px;
-        font-size: 1.2rem !important; /* Increased font size */
+        font-size: 1.3rem !important; /* Increased font size again to make it obvious */
     }
 
     /* 7. Primary Action Button (for 'Generate') - Primary Style */
@@ -676,7 +694,19 @@ def main_page():
     # --- REMOVED: Logo from homepage body ---
     
     create_main_navbar()
-    st.markdown('<div class="apple-hero-title">Build smarter, launch faster.</div>', unsafe_allow_html=True)
+    
+    # --- NEW: Hero section with Logo + Title ---
+    logo_html = ""
+    if logo_base64: # Only show logo if it loaded
+        logo_html = f'<img src="{logo_base64}" alt="StartWise Logo">'
+    
+    st.markdown(f"""
+    <div class="apple-hero-container">
+        {logo_html}
+        <div class="apple-hero-title">Build smarter, launch faster.</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.markdown(
         '<p class="apple-hero-subtitle">Tell us what your brand stands for, and we’ll do the rest.</p>',
         unsafe_allow_html=True
