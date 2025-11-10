@@ -343,13 +343,14 @@ st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
 
 # Configure the API key from Streamlit secrets
 try:
-    # Use Streamlit secrets to store the API key
-    API_KEY = st.secrets["GEMINI_API_KEY"]
+    # API_KEY = st.secrets["GEMINI_API_KEY"] # Replaced secret with hardcoded key
+    API_KEY = "AIzaSyDkoQ2M7c7EcUFpLBTMvFlAXjMg1f2TUHI"
     genai.configure(api_key=API_KEY)
+    # model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025") # Removed: Model will be initialized in each function
     GEMINI_ENABLED = True
 except Exception as e:
     # Updated error message
-    st.error(f"Error configuring Gemini API: {e}. Please ensure you have a GEMINI_API_KEY in your Streamlit secrets.")
+    st.error(f"Error configuring Gemini API: {e}. Please check the API key.")
     GEMINI_ENABLED = False
 
 # The prompt template to be filled by user inputs
@@ -459,19 +460,26 @@ Summarize:
 ---
 ### Step 6: Generated Visuals
 Based on all the analysis above, generate the following three images. Do not add any extra text, just the images.
-1. **Market Perceptual Map:** A 2x2 matrix for the competitor landscape (e.g., axes: Price vs. Niche).
-2. **Market Share Pie Chart:** An estimated market share pie chart for the identified competitors.
-3. **Sentiment Word Clouds:** Two simple word clouds, one for Positive and one for Negative customer sentiment.
 
+1.  **Market Perceptual Map:** A 2x2 matrix for the competitor landscape (e.g., axes: Price vs. Niche).
+2.  **Market Share Pie Chart:** An estimated market share pie chart for the identified competitors.
+3.  **Sentiment Word Clouds:** Two simple word clouds, one for Positive and one for Negative customer sentiment.
 ---
+
 ### Step 7: Output Formatting (Text)
 Return all text output from Steps 1-5 as plain text sections:
-Competitor Landscape Overview: <paragraph>
-Competitor Snapshots: <Brand> – <summary>
+Competitor Landscape Overview:
+<paragraph>
+Competitor Snapshots:
+<Brand> – <summary>
 …
-Market & Category Insights: <paragraph>
-Deeper Digital & Creative Intelligence: <paragraph>
-Strategic Implications: <paragraph>
+Market & Category Insights:
+<paragraph>
+Deeper Digital & Creative Intelligence:
+<paragraph>
+Strategic Implications:
+<paragraph>
+
 ### Constraints
 * Keep Indian market context (INR, Asia/Kolkata).
 * Use realistic data and inferred logic when APIs don’t return live metrics.
@@ -479,77 +487,33 @@ Strategic Implications: <paragraph>
 * Output must be clean and ready for dashboard rendering.
 """
 
-# --- NEW: MRPrompt1 (Market Radar Prompt) ---
-# This prompt is designed to take the *output* of the previous two steps
-# as its context, solving the problem of missing fields like 'Budget'.
-MR_PROMPT_TEMPLATE = """
-You are a Brand Positioning & Targeting Strategist with access to GenAI and audience/data tools (Relevance AI, Meta Audience Insights, Google Ads, Similarweb).
-
-Your task:
-Build a fully-formed Positioning & Targeting Strategy for the startup based on the context below.
-
----
-
-### Step 1 | Available Context
-
-This is the information I have about the startup. Use this to inform your analysis. 
-Where information is missing (like a specific 'Budget'), make logical assumptions based on the context and proceed.
-
-**User Inputs:**
-{user_inputs}
-
-**Segmentation Analysis (includes Target Segments):**
-{segmentation_data}
-
-**Competitor Analysis (includes Competitor Set):**
-{target_lens_data}
-
----
-
-### Step 2 | Audience Refinement (GenAI & Data)
-
-For each target segment identified in the context above:
-• Derive Audience DNA: demographics, top interests, reach/CPM, negative audiences  
-• Estimate CPM/CPC, CTR, CVR (mark **ASSUMED** if no exact data)  
-• Provide summary:  
-  - Audience DNA paragraph  
-  - Top 5 interests/keywords with source  
-  - Estimated Reach, CPM (₹), CPC (₹), Channels  
-
-Restrict at Step2 in this response. Don’t ask additional questions at the end.
-"""
-
 
 # --- 3. STATE AND NAVIGATION FUNCTIONS ---
+
 PAGE_NAMES = {
     "Home": "main_page",
-    "Segment View": "page_a", # Renamed
-    "Target Lens": "page_b", # Renamed
-    "Market Radar": "page_c", # Renamed
-    "Roadmap": "page_d", # Renamed
-    "Pricing": "page_e", # Renamed
+    "Segment View": "page_a", # Renamed from "Branding"
+    "Target Lens": "page_b", # Renamed from "MacBook"
+    "Market Radar": "page_c", # Renamed from "iPhone 16"
+    "Roadmap": "page_d", # Renamed from "Watch X"
+    "Pricing": "page_e", # Renamed from "AirPods Max"
 }
 
 # Initialize session state for page management
 if 'current_page' not in st.session_state:
     st.session_state.current_page = PAGE_NAMES["Home"]
-
-# --- State for Form Inputs ---
 if 'startup_idea' not in st.session_state:
     st.session_state.startup_idea = None
+# Renamed startup_values to startup_launch_plan for clarity
 if 'startup_launch_plan' not in st.session_state:
     st.session_state.startup_launch_plan = None
 if 'generating' not in st.session_state:
     st.session_state.generating = False
-
-# --- NEW: Session state for generated outputs ---
+# NEW: Session state for generated outputs
 if 'segmentation_output' not in st.session_state:
     st.session_state.segmentation_output = None
 if 'target_lens_output' not in st.session_state:
     st.session_state.target_lens_output = None
-# --- NEW: State for Market Radar ---
-if 'market_radar_output' not in st.session_state:
-    st.session_state.market_radar_output = None
 
 
 def navigate_to(page_key):
@@ -559,357 +523,356 @@ def navigate_to(page_key):
 def create_main_navbar():
     """Creates the static horizontal navigation bar."""
     st.markdown('<div class="apple-nav-container">', unsafe_allow_html=True)
-    
     cols = st.columns(6)
+    
     page_keys = list(PAGE_NAMES.keys()) # ["Home", "Branding", ...]
     page_values = list(PAGE_NAMES.values()) # ["main_page", "page_a", ...]
-
+    
     with cols[0]:
         is_active = st.session_state.current_page == page_values[0]
         if st.button(page_keys[0], key="nav_home", disabled=is_active):
             navigate_to(page_values[0])
             st.rerun() # Use rerun for instant page switch
-
+    
     with cols[1]:
         is_active = st.session_state.current_page == page_values[1]
-        if st.button(page_keys[1], key="nav_seg", disabled=is_active):
+        if st.button(page_keys[1], key="nav_branding", disabled=is_active): # Updated key (key name is internal, fine to keep)
             navigate_to(page_values[1])
             st.rerun()
-
+                
     with cols[2]:
         is_active = st.session_state.current_page == page_values[2]
-        if st.button(page_keys[2], key="nav_lens", disabled=is_active):
+        if st.button(page_keys[2], key="nav_mac", disabled=is_active):
             navigate_to(page_values[2])
             st.rerun()
 
     with cols[3]:
         is_active = st.session_state.current_page == page_values[3]
-        if st.button(page_keys[3], key="nav_radar", disabled=is_active):
+        if st.button(page_keys[3], key="nav_iphone", disabled=is_active):
             navigate_to(page_values[3])
             st.rerun()
-
+                
     with cols[4]:
         is_active = st.session_state.current_page == page_values[4]
-        if st.button(page_keys[4], key="nav_road", disabled=is_active):
+        if st.button(page_keys[4], key="nav_watch", disabled=is_active):
             navigate_to(page_values[4])
             st.rerun()
-            
+                
     with cols[5]:
         is_active = st.session_state.current_page == page_values[5]
-        if st.button(page_keys[5], key="nav_price", disabled=is_active):
+        if st.button(page_keys[5], key="nav_airpods", disabled=is_active):
             navigate_to(page_values[5])
             st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
+# --- 3. PAGE CONTENT FUNCTIONS ---
 
-# --- 4. GEMINI API CALL FUNCTIONS ---
+def main_page():
+    """The main landing page with the hero section and input form."""
+    
+    # --- ADDED: Logo ---
+    # Center the logo using columns. 
+    col1, col2, col3 = st.columns([1, 2, 1]) # Create a wider middle column
+    with col2:
+        # Assuming StartWiseLogo.jpeg is in the same directory as app.py
+        try:
+            st.image("StartWiseLogo.jpeg", width=300) # Set width for consistent size
+        except FileNotFoundError:
+            st.error("Logo file 'StartWiseLogo.jpeg' not found.")
+    # --- END: Logo ---
+    
+    create_main_navbar()
+    st.markdown('<div class="apple-hero-title">Build smarter, launch faster.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="apple-hero-subtitle">Tell us what your brand stands for, and we’ll do the rest.</p>',
+        unsafe_allow_html=True
+    )
+    
+    # --- New Input Form ---
+    with st.form(key="brand_form"):
+        idea = st.text_area(
+            "What idea do you have in mind?", 
+            placeholder="What is your product or service? What makes your product unique? How will you sell it?",
+            height=100
+        )
+        # Updated this section as requested
+        launch_plan = st.text_area(
+            "What are your thoughts on a launch plan?", 
+            placeholder="Where are you launching first? Who is your ideal customer? Any constraints?",
+            height=100
+        )
+        
+        # Center the button
+        st.markdown('<div class="apple-primary-button-container" style="display: flex; justify-content: center;">', unsafe_allow_html=True)
+        submitted = st.form_submit_button("Generate Brand Identity", type="primary", disabled=not GEMINI_ENABLED)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        if submitted:
+            if not idea or not launch_plan:
+                st.error("Please fill out both fields to generate your brand identity.")
+            else:
+                st.session_state.startup_idea = idea
+                st.session_state.startup_launch_plan = launch_plan # Updated state variable
+                st.session_state.generating = True # Flag to show spinner on next page
+                
+                # Clear old outputs on new submission
+                st.session_state.segmentation_output = None
+                st.session_state.target_lens_output = None
+                
+                navigate_to(PAGE_NAMES["Segment View"]) # FIXED: Was "Branding"
+                st.rerun()
+
+
+# --- 4. GEMINI API CALL FUNCTION ---
 
 def get_segmentation_output(idea, launch_plan):
     """
-    Generates content using the SEGMENTATION_PROMPT_TEMPLATE.
+    Calls the Gemini API with the formatted segmentation prompt.
     """
     if not GEMINI_ENABLED:
-        return "Gemini API is not configured."
+        return "Error: Gemini API is not configured. Please check your API key."
 
+    # --- ADDED: Initialize text model ---
+    model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
+
+    # Format the prompt with user inputs
+    prompt = SEGMENTATION_PROMPT_TEMPLATE.format(idea=idea, launch_plan=launch_plan)
+    
     try:
-        # Use a reliable, current model
-        model = genai.GenerativeModel("gemini-1.5-flash-latest")
-        
-        # Format the prompt
-        prompt = SEGMENTATION_PROMPT_TEMPLATE.format(
-            idea=idea,
-            launch_plan=launch_plan
-        )
-        
         # Generate content
         response = model.generate_content(prompt)
-        
-        # Clean the response text, remove common markdown "ticks"
-        cleaned_text = response.text.strip().lstrip("```markdown").rstrim("```").strip()
-        
-        # Replace placeholder image URLs to ensure they are valid
-        # E.g., ...[Persona Name](https://placehold.co/...)
-        cleaned_text = re.sub(
-            r'\[(.*?)\]\((https:\/\/placehold\.co\/.*?)\)',
-            r'![Persona Image](\2)',
-            cleaned_text
+        # A simple regex to replace placeholder image prompts with actual placeholder images
+        placeholder_url = "https://placehold.co/600x400/2a2a2a/808080?text=Persona+Image"
+        cleaned_output = re.sub(
+            r"\[Generate and embed the image here.*?\]",
+            f"![Persona Image]({placeholder_url})",
+            response.text
         )
-        # E.g., Just a raw URL https://placehold.co/...
-        cleaned_text = re.sub(
-            r'https://placehold\.co/300x300/E0E0E0/000000\?text=([\w+\-]+)',
-            r'https://placehold.co/300x300/E0E0E0/000000?text=\1',
-            cleaned_text
-        )
-
-        return cleaned_text
-    
+        return cleaned_output
     except Exception as e:
-        st.error(f"Error calling Gemini API (Segmentation): {e}")
-        return None
+        st.error(f"An error occurred while calling the Gemini API: {e}")
+        return f"Error: Could not generate content. {e}"
 
-def get_target_lens_output():
+# --- NEW: Target Lens Gemini Function ---
+def get_target_lens_output(segmentation_data: str):
     """
-    Generates content using the TL_PROMPT_TEMPLATE.
-    This function *depends on* segmentation_output.
+    Calls the Gemini API with the Target Lens prompt, using segmentation
+    data as context. Now returns both text and images.
     """
     if not GEMINI_ENABLED:
-        return "Gemini API is not configured."
+        return {"text": "Error: Gemini API is not configured.", "images": []}
         
-    if not st.session_state.segmentation_output:
-        st.warning("Segmentation data is missing. Cannot generate Target Lens.")
-        return None
-
-    try:
-        model = genai.GenerativeModel("gemini-1.5-flash-latest")
-        
-        # Format the prompt
-        prompt = TL_PROMPT_TEMPLATE.format(
-            segmentation_data=st.session_state.segmentation_output
-        )
-        
-        response = model.generate_content(prompt)
-        cleaned_text = response.text.strip().lstrip("```markdown").rstrim("```").strip()
-        
-        return cleaned_text
+    # --- MODEL CHANGED HERE ---
+    model = genai.GenerativeModel("gemini-2.5-flash-image-preview")
     
-    except Exception as e:
-        st.error(f"Error calling Gemini API (Target Lens): {e}")
-        return None
-
-# --- NEW: Market Radar Function ---
-def get_market_radar_output():
-    """
-    Generates content using the MR_PROMPT_TEMPLATE.
-    This function *depends on* segmentation_output and target_lens_output.
-    """
-    if not GEMINI_ENABLED:
-        return "Gemini API is not configured."
-        
-    if not st.session_state.segmentation_output or not st.session_state.target_lens_output:
-        st.warning("Prerequisite data is missing. Cannot generate Market Radar.")
-        return None
-
-    try:
-        model = genai.GenerativeModel("gemini-1.5-flash-latest")
-        
-        # Create a simple summary of the user inputs
-        user_inputs_str = f"""
-* **Startup Idea:** {st.session_state.startup_idea}
-* **Launch Plan:** {st.session_state.startup_launch_plan}
-"""
-        
-        # Format the prompt
-        prompt = MR_PROMPT_TEMPLATE.format(
-            user_inputs=user_inputs_str,
-            segmentation_data=st.session_state.segmentation_output,
-            target_lens_data=st.session_state.target_lens_output
-        )
-        
-        response = model.generate_content(prompt)
-        cleaned_text = response.text.strip().lstrip("```markdown").rstrim("```").strip()
-        
-        return cleaned_text
+    # Format the prompt with the segmentation output
+    prompt = TL_PROMPT_TEMPLATE.format(segmentation_data=segmentation_data)
     
-    except Exception as e:
-        st.error(f"Error calling Gemini API (Market Radar): {e}")
-        return None
-
-
-def on_generate_click():
-    """
-    Callback function for the 'Generate' button.
-    Stores inputs, sets generating flag, and fetches all outputs.
-    """
-    # 1. Store inputs in session state
-    st.session_state.startup_idea = st.session_state.temp_idea
-    st.session_state.startup_launch_plan = st.session_state.temp_launch_plan
-    st.session_state.generating = True
-    
-    # 2. Clear all previous outputs
-    st.session_state.segmentation_output = None
-    st.session_state.target_lens_output = None
-    st.session_state.market_radar_output = None
-
     try:
-        # --- Step 1: Get Segmentation ---
-        with st.spinner("Generating... (Step 1/3: Segmentation)"):
-            seg_output = get_segmentation_output(
-                st.session_state.startup_idea,
-                st.session_state.startup_launch_plan
-            )
+        # --- GENERATION CALL CHANGED HERE ---
+        generation_config = {"responseModalities": ["TEXT", "IMAGE"]}
+        response = model.generate_content(prompt, generation_config=generation_config)
         
-        if seg_output:
-            st.session_state.segmentation_output = seg_output
-        else:
-            raise Exception("Failed to generate segmentation output.")
-
-        # --- Step 2: Get Target Lens ---
-        with st.spinner("Generating... (Step 2/3: Target Lens)"):
-            lens_output = get_target_lens_output() # Depends on state
+        # --- RESPONSE PROCESSING CHANGED HERE ---
+        text_output = ""
+        image_outputs = []
         
-        if lens_output:
-            st.session_state.target_lens_output = lens_output
-        else:
-            raise Exception("Failed to generate target lens output.")
-
-        # --- Step 3: Get Market Radar ---
-        with st.spinner("Generating... (Step 3/3: Market Radar)"):
-            radar_output = get_market_radar_output() # Depends on state
-        
-        if radar_output:
-            st.session_state.market_radar_output = radar_output
-        else:
-            raise Exception("Failed to generate market radar output.")
-
-        # If all successful, navigate to the first results page
-        st.session_state.generating = False
-        navigate_to(PAGE_NAMES["Segment View"])
-        st.rerun()
+        if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+            for part in response.candidates[0].content.parts:
+                if 'text' in part:
+                    text_output += part.text + "\n"
+                elif 'inlineData' in part:
+                    img_data = part.inlineData
+                    base64_data = img_data.data
+                    mime_type = img_data.mimeType
+                    image_url = f"data:{mime_type};base64,{base64_data}"
+                    image_outputs.append(image_url)
+                    
+        return {"text": text_output, "images": image_outputs}
 
     except Exception as e:
-        st.session_state.generating = False
-        st.error(f"An error occurred during generation: {e}")
-        # Don't rerun, stay on page to show error
+        st.error(f"An error occurred while calling the Gemini API: {e}")
+        return {"text": f"Error: Could not generate content. {e}", "images": []}
 
-# --- 5. PAGE DEFINITIONS ---
 
-def main_page():
-    """The main 'Home' page with the input form."""
-    create_main_navbar()
-    
-    st.markdown('<h1 class="apple-hero-title">BrandGen Studio</h1>', unsafe_allow_html=True)
-    st.markdown(
-        '<p class="apple-hero-subtitle">Define your startup idea. We build the brand strategy.</p>',
-        unsafe_allow_html=True
-    )
-
-    # Use columns for a centered, narrower form
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col2:
-        with st.form(key="brand_form"):
-            st.text_input(
-                "Your Startup Idea",
-                key="temp_idea",
-                placeholder="E.g., A new brand of RTD craft coffee for WFH professionals in India.",
-                value=st.session_state.startup_idea or "" # Persist value
-            )
-            
-            st.text_area(
-                "Your Launch Plan & Context",
-                key="temp_launch_plan",
-                placeholder="E.g., Launching D2C in Mumbai & Bangalore. Target audience is 25-40. Price is premium (Rs. 150-200 per bottle). Focus on 'clean energy' and 'no preservatives'.",
-                value=st.session_state.startup_launch_plan or "" # Persist value
-            )
-
-            # Use st.form_submit_button and place it in a custom container
-            st.markdown('<div class="apple-primary-button-container">', unsafe_allow_html=True)
-            submit_button = st.form_submit_button(
-                label="Generate Strategy",
-                disabled=st.session_state.generating,
-                use_container_width=True # Make button full-width in this column
-            )
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            if submit_button:
-                if not st.session_state.temp_idea or not st.session_state.temp_launch_plan:
-                    st.warning("Please fill out both fields to generate your strategy.")
-                else:
-                    on_generate_click()
-
+# --- 5. PAGE CONTENT FUNCTIONS ---
 
 def page_a():
-    """Segment View Page"""
+    """Segment View Page / Brand Output Page"""
     create_main_navbar()
-    st.markdown('<h1 class="apple-page-title">Segment View</h1>', unsafe_allow_html=True)
-
-    if st.session_state.segmentation_output:
-        # Display the input summary
-        st.markdown('<div class="input-summary-section">', unsafe_allow_html=True)
-        st.markdown(f"<h3>Startup Idea</h3><p>{st.session_state.startup_idea}</p>", unsafe_allow_html=True)
-        st.markdown(f"<h3>Launch Plan</h3><p>{st.session_state.startup_launch_plan}</p>", unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Check if we landed here from the form
+    if st.session_state.startup_idea and st.session_state.startup_launch_plan:
+        st.markdown('<h1 class="apple-page-title">Segment View</h1>', unsafe_allow_html=True)
         
-        # Display the generated output
-        st.markdown('<div class="brand-output-section">', unsafe_allow_html=True)
-        st.markdown(st.session_state.segmentation_output, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Display the inputs
+        st.markdown(f"""
+        <div class="input-summary-section">
+            <h3>Startup Idea</h3>
+            <p>"{st.session_state.startup_idea}"</p>
+            <h3 style="margin-top: 1rem;">Launch Plan</h3>
+            <p>"{st.session_state.startup_launch_plan}"</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        output_placeholder = st.empty()
+        
+        # Check if we are generating for the first time
+        if st.session_state.generating:
+            with st.spinner("Calling Gemini to generate brand identity and competitive analysis..."):
+                # 1. Call Segmentation API
+                segmentation_output = get_segmentation_output(
+                    st.session_state.startup_idea, 
+                    st.session_state.startup_launch_plan
+                )
+                st.session_state.segmentation_output = segmentation_output
+                
+                # 2. Call Target Lens API, feeding in the output from step 1
+                target_lens_output = get_target_lens_output(segmentation_output)
+                st.session_state.target_lens_output = target_lens_output
+                
+                st.session_state.generating = False # Done generating
+        
+        # Display the generated output for *this page*
+        if st.session_state.segmentation_output:
+            output_placeholder.markdown(
+                f'<div class="brand-output-section">{st.session_state.segmentation_output}</div>', 
+                unsafe_allow_html=True
+            )
+        elif not st.session_state.generating:
+             output_placeholder.error("There was an issue generating the segmentation output.")
+
     else:
-        st.info("Please generate a strategy on the 'Home' page to see your Segment View.")
+        # Default content if no inputs
+        st.markdown('<h1 class="apple-page-title">Segment View</h1>', unsafe_allow_html=True)
+        st.markdown("## Define Your Identity.")
+        st.markdown("""
+            <p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;">
+            <i>To generate a brand identity, please return to the <b>Home</b> page and fill out the form.</i>
+            </p>
+        """, unsafe_allow_html=True)
+
 
 def page_b():
-    """Target Lens Page"""
+    """Target Lens Page - NOW DYNAMIC with Text and Images"""
     create_main_navbar()
     st.markdown('<h1 class="apple-page-title">Target Lens</h1>', unsafe_allow_html=True)
-
-    if st.session_state.target_lens_output:
-        # Display the input summary
-        st.markdown('<div class="input-summary-section">', unsafe_allow_html=True)
-        st.markdown(f"<h3>Startup Idea</h3><p>{st.session_state.startup_idea}</p>", unsafe_allow_html=True)
-        st.markdown(f"<h3>Launch Plan</h3><p>{st.session_state.startup_launch_plan}</p>", unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Check if inputs exist
+    if st.session_state.startup_idea and st.session_state.startup_launch_plan:
+        # Display the inputs for context
+        st.markdown(f"""
+        <div class="input-summary-section">
+            <h3>Startup Idea</h3>
+            <p>"{st.session_state.startup_idea}"</p>
+            <h3 style="margin-top: 1rem;">Launch Plan</h3>
+            <p>"{st.session_state.startup_launch_plan}"</p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Display the generated output
-        st.markdown('<div class="brand-output-section">', unsafe_allow_html=True)
-        st.markdown(st.session_state.target_lens_output, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        output_placeholder = st.empty()
+        
+        # Check if the output for this page already exists
+        if st.session_state.target_lens_output:
+            # --- RENDER LOGIC CHANGED HERE ---
+            output_data = st.session_state.target_lens_output
+            text_output = output_data.get("text")
+            image_output = output_data.get("images", [])
+
+            with output_placeholder.container():
+                if text_output:
+                    st.markdown(
+                        f'<div class="brand-output-section">{text_output}</div>', 
+                        unsafe_allow_html=True
+                    )
+                
+                if image_output:
+                    st.markdown('<div class="brand-output-section" style="margin-top: 2rem;">', unsafe_allow_html=True)
+                    st.markdown("<h3>Generated Visuals</h3>", unsafe_allow_html=True)
+                    # Display images in columns for better layout
+                    
+                    # Ensure we have at least 1 column
+                    num_cols = len(image_output) if len(image_output) > 0 else 1
+                    cols = st.columns(num_cols)
+                    
+                    for i, img_url in enumerate(image_output):
+                        # Use modulo for safety in case num_cols is 0, though we guard for it
+                        with cols[i % num_cols]:
+                            st.image(img_url, use_column_width=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                
+                if not text_output and not image_output:
+                    st.warning("Generation complete, but no content was returned. The prompt might need adjustment.")
+            # --- END OF RENDER LOGIC CHANGE ---
+        
+        # If it's currently generating, show a spinner
+        elif st.session_state.generating:
+             output_placeholder.info("Your analysis is being generated. Please wait...")
+        # Fallback: If output doesn't exist but inputs do (e.g., error in first step)
+        else:
+            output_placeholder.warning("Could not find generated analysis. Please try submitting the form again from the Home page.")
+            
     else:
-        st.info("Please generate a strategy on the 'Home' page to see your Target Lens.")
+        # Default content if no inputs
+        st.markdown("## Analyze Your Competition.")
+        st.markdown("""
+            <p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;">
+            <i>To generate a competitive analysis, please return to the <b>Home</b> page and fill out the form.</i>
+            </p>
+        """, unsafe_allow_html=True)
 
 
-# --- UPDATED: Market Radar Page ---
 def page_c():
     """Market Radar Page"""
     create_main_navbar()
     st.markdown('<h1 class="apple-page-title">Market Radar</h1>', unsafe_allow_html=True)
-
-    if st.session_state.market_radar_output:
-        # Display the input summary
-        st.markdown('<div class="input-summary-section">', unsafe_allow_html=True)
-        st.markdown(f"<h3>Startup Idea</h3><p>{st.session_state.startup_idea}</p>", unsafe_allow_html=True)
-        st.markdown(f"<h3>Launch Plan</h3><p>{st.session_state.startup_launch_plan}</p>", unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Display the generated output
-        st.markdown('<div class="brand-output-section">', unsafe_allow_html=True)
-        st.markdown(st.session_state.market_radar_output, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        st.info("Please generate a strategy on the 'Home' page to see your Market Radar.")
-
-
-def page_d():
-    """Roadmap Page (Static)"""
-    create_main_navbar()
-    st.markdown('<h1 class="apple-page-title">Roadmap</h1>', unsafe_allow_html=True)
-    st.markdown("## Coming Soon: The Future of Health")
+    st.markdown("## A Giant Leap for Photography.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
-        This section will soon feature a generative roadmap based on your product, 
-        highlighting key technological and market milestones.
+        The new camera system in iPhone 16 Pro brings light and detail to your images like never before. 
+        The Action button and USB-C port simplify everything.
         </p>
         <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
-            <li>**Q1 2026:** AI-Powered Persona Deep-Dives</li>
-            <li>**Q2 2026:** Real-time Market Trend Integration</li>
-            <li>**Q3 2026:** Automated GTM Creative Briefs</li>
+            <li>**A18 Bionic Chip:** Faster performance, superior gaming.</li>
+            <li>**ProMotion Display:** Adaptive 120Hz refresh rate.</li>
+            <li>**48MP Main Camera:** Unrivaled low-light performance.</li>
         </ul>
     """, unsafe_allow_html=True)
 
-def page_e():
-    """Pricing Page (Static)"""
+
+def page_d():
+    """Roadmap Page"""
     create_main_navbar()
-    st.markdown('<h1 class="apple-page-title">Pricing</h1>', unsafe_allow_html=True)
-    st.markdown("## Simple, Powerful Plans")
+    st.markdown('<h1 class="apple-page-title">Roadmap</h1>', unsafe_allow_html=True)
+    st.markdown("## Reimagined. Revolutionary.")
     st.markdown("""
         <p style="font-size: 1.1rem; color: #E0E0E0;">
-        Currently in beta, BrandGen Studio is free to use. 
-        Future plans will be based on usage and advanced features.
+        Apple Watch X features an all-new design with a thinner case and a magnetic band attachment system. 
+        It’s the essential tool for a healthy and active life.
         </p>
         <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
-            <li>**Beta (Current):** Free access</li>
-            <li>**Pro (Coming Soon):** For startups needing advanced analytics</li>
-            <li>**Enterprise (Coming Soon):** For agencies and VCs</li>
+            <li>**S10 Chip:** Faster, more efficient processing.</li>
+            <li>**Blood Glucose Monitoring:** Non-invasive monitoring capability.</li>
+            <li>**New Health Sensors:** Advanced crash-detection.</li>
+        </ul>
+    """, unsafe_allow_html=True)
+
+    
+def page_e():
+    """Pricing Page"""
+    create_main_navbar()
+    st.markdown('<h1 class="apple-page-title">Pricing</h1>', unsafe_allow_html=True)
+    st.markdown("## Audio Purity. Redefined.")
+    st.markdown("""
+        <p style="font-size: 1.1rem; color: #E0E0E0;">
+        AirPods Max deliver unparalleled high-fidelity audio with industry-leading Active Noise Cancellation. 
+        They've been updated with USB-C and extended battery life.
+        </p>
+        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
+            <li>**H3 Chip:** Advanced computational audio processing.</li>
+            <li>**Lossless Audio:** Support for high-resolution lossless audio.</li>
+            <li>**New Carrying Case:** Ultra-low power mode for extended standby.</li>
         </ul>
     """, unsafe_allow_html=True)
 
@@ -925,6 +888,5 @@ page_functions = {
     PAGE_NAMES["Pricing"]: page_e, # Updated
 }
 
-# Get the function corresponding to the current page and call it
-current_page_function = page_functions.get(st.session_state.current_page, main_page)
-current_page_function()
+# Execute the function corresponding to the current page state
+page_functions[st.session_state.current_page]()
