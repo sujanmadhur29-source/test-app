@@ -153,9 +153,11 @@ APPLE_TAILWIND_CSS = """
         max-width: 100%;
         padding: 0 8px; /* small breathing room */
     }
-    .apple-nav-container [data-testid="stButton"] > button {
+    .apple-nav-container [data-testid=\"stButton\"] > button {
         background: transparent !important;
         border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
         color: #A9B4C2 !important; /* Light gray-blue text */
         padding: 14px 18px !important;
         font-size: 0.95rem;
@@ -164,17 +166,14 @@ APPLE_TAILWIND_CSS = """
         width: 100%;
         white-space: nowrap;
         border-radius: 0 !important; /* square buttons */
-    }
-    .apple-nav-container [data-testid="stButton"] > button:hover {
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+    }ite-s.apple-nav-container [data-testid=\"stButton\"] > button:hover {
         color: #FFFFFF !important; /* White */
         background-color: rgba(255,255,255,0.12) !important; /* hover highlight */
-    }
-    .apple-nav-container [data-testid="stButton"] > button:disabled {
-        color: #FFFFFF !important; /* active tab */
-        background-color: rgba(255,255,255,0.18) !important; /* active highlight */
-        border: none !important;
-        cursor: default !important;
-    }
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.18) !important; /* floating effect */
+    }apple.apple-nav-container [data-testid=\"stButton\"] > button:disabled {!important; /* floating effect */\n    }
+    .apple-nav-container [data-testid="stButton"] > button:disabled {\n        color: #FFFFFF !important; /* active tab */\n        background-color: rgba(255,255,255,0.18) !important; /* active highlight */\n        border: none !important;\n        outline: none !important;\n        box-shadow: none !important; /* no outlines */\n        cursor: default !important;\n    }
     
     /* Inputs and Text Areas */
     [data-testid="stTextInput"] > div > div > input,
@@ -400,7 +399,8 @@ LOGO_BUTTON_STYLE = f"""
         border: none !important;
         background-color: rgba(255,255,255,0.12) !important;
     }}
-    .apple-nav-container [data-testid=\"stColumn\"]:first-child [data-testid=\"stButton\"] > button:disabled {{
+    .apple-nav-container [data-testid# st.markdown(LOGO_BUTTON_STYLE, unsafe_allow_html=True)  # disabled: keep Home as a normal floating nav button
+ button:disabled {{
         background-color: rgba(255,255,255,0.18) !important;
         opacity: 1.0;
         border: none !important;
@@ -412,7 +412,7 @@ LOGO_BUTTON_STYLE = f"""
 st.set_page_config(layout="wide", page_title="StartWise App")
 st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
 st.markdown(tabs_font_css, unsafe_allow_html=True)
-st.markdown(LOGO_BUTTON_STYLE, unsafe_allow_html=True)
+# st.markdown(LOGO_BUTTON_STYLE, unsafe_allow_html=True)  # disabled: keep Home as a normal floating nav button
 
 # --- Gemini config (TEXT model only) ---------------------------------------
 
@@ -576,10 +576,10 @@ def navigate_to(page_key):
     st.session_state.current_page = page_key
 
 def create_main_navbar():
-    # Full-width, single-bar nav. The outer container is fixed to top via CSS.
+    # Full-width is fixed to top via CSS.
     st.markdown('<div class="apple-nav-container"><div class="apple-nav-inner">', unsafe_allow_html=True)
 
-    cols = st.columns([2, 2, 2, 2, 2, 2])
+    cols = st.columns(6)
     page_keys = list(PAGE_NAMES.keys())
     page_vals = list(PAGE_NAMES.values())
 
