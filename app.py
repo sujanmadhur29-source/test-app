@@ -153,7 +153,7 @@ APPLE_TAILWIND_CSS = """
         max-width: 100%;
         padding: 0 8px; /* small breathing room */
     }
-    .apple-nav-container [data-testid=\"stButton\"] > button {
+    .apple-nav-container [data-testid="stButton"] > button {
         background: transparent !important;
         border: none !important;
         outline: none !important;
@@ -167,13 +167,21 @@ APPLE_TAILWIND_CSS = """
         white-space: nowrap;
         border-radius: 0 !important; /* square buttons */
         transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-    }ite-s.apple-nav-container [data-testid=\"stButton\"] > button:hover {
+    }
+    .apple-nav-container [data-testid="stButton"] > button:hover {
         color: #FFFFFF !important; /* White */
         background-color: rgba(255,255,255,0.12) !important; /* hover highlight */
         transform: translateY(-2px);
         box-shadow: 0 6px 12px rgba(0,0,0,0.18) !important; /* floating effect */
-    }apple.apple-nav-container [data-testid=\"stButton\"] > button:disabled {!important; /* floating effect */\n    }
-    .apple-nav-container [data-testid="stButton"] > button:disabled {\n        color: #FFFFFF !important; /* active tab */\n        background-color: rgba(255,255,255,0.18) !important; /* active highlight */\n        border: none !important;\n        outline: none !important;\n        box-shadow: none !important; /* no outlines */\n        cursor: default !important;\n    }
+    }
+    .apple-nav-container [data-testid="stButton"] > button:disabled {
+        color: #FFFFFF !important; /* active tab */
+        background-color: rgba(255,255,255,0.18) !important; /* active highlight */
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important; /* no outlines */
+        cursor: default !important;
+    }
     
     /* Inputs and Text Areas */
     [data-testid="stTextInput"] > div > div > input,
@@ -399,8 +407,7 @@ LOGO_BUTTON_STYLE = f"""
         border: none !important;
         background-color: rgba(255,255,255,0.12) !important;
     }}
-    .apple-nav-container [data-testid# st.markdown(LOGO_BUTTON_STYLE, unsafe_allow_html=True)  # disabled: keep Home as a normal floating nav button
- button:disabled {{
+    .apple-nav-container [data-testid=\"stColumn\"]:first-child [data-testid=\"stButton\"] > button:disabled {{
         background-color: rgba(255,255,255,0.18) !important;
         opacity: 1.0;
         border: none !important;
@@ -576,42 +583,20 @@ def navigate_to(page_key):
     st.session_state.current_page = page_key
 
 def create_main_navbar():
-    # Full-width is fixed to top via CSS.
+    # Full-width nav bar
     st.markdown('<div class="apple-nav-container"><div class="apple-nav-inner">', unsafe_allow_html=True)
 
-    cols = st.columns(6)
+    cols = st.columns([1,1,1,1,1,1])
     page_keys = list(PAGE_NAMES.keys())
     page_vals = list(PAGE_NAMES.values())
 
-    with cols[0]:
-        is_active = st.session_state.current_page == page_vals[0]
-        if st.button(page_keys[0], key="nav_home", disabled=is_active):
-            navigate_to(page_vals[0]); st.rerun()
-
-    with cols[1]:
-        is_active = st.session_state.current_page == page_vals[1]
-        if st.button(page_keys[1], key="nav_branding", disabled=is_active):
-            navigate_to(page_vals[1]); st.rerun()
-
-    with cols[2]:
-        is_active = st.session_state.current_page == page_vals[2]
-        if st.button(page_keys[2], key="nav_mac", disabled=is_active):
-            navigate_to(page_vals[2]); st.rerun()
-
-    with cols[3]:
-        is_active = st.session_state.current_page == page_vals[3]
-        if st.button(page_keys[3], key="nav_iphone", disabled=is_active):
-            navigate_to(page_vals[3]); st.rerun()
-
-    with cols[4]:
-        is_active = st.session_state.current_page == page_vals[4]
-        if st.button(page_keys[4], key="nav_watch", disabled=is_active):
-            navigate_to(page_vals[4]); st.rerun()
-
-    with cols[5]:
-        is_active = st.session_state.current_page == page_vals[5]
-        if st.button(page_keys[5], key="nav_airpods", disabled=is_active):
-            navigate_to(page_vals[5]); st.rerun()
+    for i, col in enumerate(cols):
+        with col:
+            label = page_keys[i]
+            value = page_vals[i]
+            is_active = st.session_state.current_page == value
+            if st.button(label, key=f"nav_{value}", disabled=is_active):
+                navigate_to(value); st.rerun()
 
     st.markdown('</div></div>', unsafe_allow_html=True)
 
