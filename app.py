@@ -326,34 +326,33 @@ APPLE_TAILWIND_CSS = """
 
     /* NEW: Styling for tables to prevent overflow */
     .brand-output-section table {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        border-collapse: collapse;
-        margin-top: 1rem;
-        margin-bottom: 1rem;
-        border: 1px solid #333;
-        border-radius: 8px;
-        table-layout: fixed;            /* NEW: keeps columns sane */
-    }
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #333;
+    border-radius: 8px;
+    table-layout: fixed; /* ensures columns don't collapse */
+}
 
-    .brand-output-section th,
-    .brand-output-section td {
-        border-bottom: 1px solid #333;
-        padding: 0.75rem 1rem;
-        color: #E0E0E0;
-        white-space: normal;            /* NEW: allow wrapping */
-        overflow-wrap: anywhere;        /* NEW: break very long tokens */
-        word-break: break-word;         /* NEW: fallback for older content */
-        border-left: 1px solid #333;
-        vertical-align: top;            /* NEW: nicer multi-line cells */
-    }
+.brand-output-section th,
+.brand-output-section td {
+    border-bottom: 1px solid #333;
+    padding: 0.75rem 1rem;
+    color: #E0E0E0;
+    white-space: normal !important;   /* allow wrapping */
+    overflow-wrap: anywhere;
+    vertical-align: top;
+    border-left: 1px solid #333;
+}
 
-    
-    .brand-output-section td:first-child,
-    .brand-output-section th:first-child {
-        border-left: none; /* Remove double border on the left */
-    }
+.brand-output-section th:first-child,
+.brand-output-section td:first-child {
+    min-width: 180px; /* prevents "Segment Name" from squeezing */
+}
+
 
     .brand-output-section th {
         background-color: #2a2a2a; /* Header background */
@@ -766,21 +765,29 @@ def get_segmentation_output(idea, launch_plan):
         response = model.generate_content(prompt)
         text = response.text or ""
 
-        # 1) Replace placeholder image instructions
-        placeholder_url = "https://placehold.co/300x300/E0E0E0/000000?text=Persona"
-        text = re.sub(
-            r"\[Generate.*?Image.*?\]",
-            f'<img src="{placeholder_url}" alt="Persona Image" />',
-            text,
-            flags=re.IGNORECASE | re.DOTALL
-        )
-
-        # 2) Convert "Generated Persona Image: <URL>" into an actual image
+        # Convert: "Generated Persona Image: <URL>" → actual image
         text = re.sub(
             r"Generated Persona Image\s*:\s*(https?://\S+)",
-            r'<img src="\1" alt="Persona Image" />',
+            r"![](\1)",
             text,
             flags=re.IGNORECASE
+        )
+
+        # Convert raw placehold.co URLs on standalone lines
+        text = re.sub(
+            r"^(https?://placehold\.co/\S+)$",
+            r"![](\1)",
+            text,
+            flags=re.MULTILINE | re.IGNORECASE
+        )
+
+        # Replace placeholder instruction blocks with a fallback image
+        fallback = "https://placehold.co/300x300/E0E0E0/000000?text=Persona"
+        text = re.sub(
+            r"\[Generate.*?image.*?\]",
+            f"![]({fallback})",
+            text,
+            flags=re.IGNORECASE | re.DOTALL
         )
 
         return text
@@ -788,6 +795,7 @@ def get_segmentation_output(idea, launch_plan):
     except Exception as e:
         st.error(f"An error occurred while calling the Gemini API: {e}")
         return f"Error: Could not generate content. {e}"
+
 
 # --- NEW: Target Lens Gemini Function ---
 def get_target_lens_output(segmentation_data: str):
