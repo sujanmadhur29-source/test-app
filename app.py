@@ -5,7 +5,8 @@ import os
 import re
 import base64
 
-# ---------- Utilities ----------
+# --- Helpers ---------------------------------------------------------------
+
 def get_image_as_base64(file_path):
     """Reads an image file and returns it as a base64 encoded data URI."""
     try:
@@ -15,41 +16,38 @@ def get_image_as_base64(file_path):
         st.error(f"Logo file '{file_path}' not found. Please ensure 'StartWiseLogo.jpeg' is in the same directory as 'app.py'.")
         return ""
 
-def sanitize_generated_markdown(text: str) -> str:
-    """Remove stray code fences and closing tags that sometimes appear in LLM output."""
-    if not text:
-        return text or ""
+def clean_model_markdown(text: str) -> str:
+    """
+    Cleanups for model output so we don't render stray HTML tags as text:
+    - remove any lines that are just <div> or </div>
+    - (safety) remove bare opening/closing div tags inline as well
+    """
+    # remove lines that only contain <div> or </div> (with optional spaces)
+    text = re.sub(r"^\s*</?div>\s*$", "", text, flags=re.IGNORECASE | re.MULTILINE)
+    # remove any stray standalone <div> / </div> that might appear inline
+    text = re.sub(r"\s*</?div>\s*", " ", text, flags=re.IGNORECASE)
+    return text.strip()
 
-    # Strip leading/trailing fenced code blocks the model may add
-    text = re.sub(r"^\s*```(?:\w+)?\s*", "", text)
-    text = re.sub(r"\s*```\s*$", "", text)
+# --- Branding assets -------------------------------------------------------
 
-    # Remove any lines that are just stray closing </div> tags
-    text = re.sub(r"^\s*</div>\s*$", "", text, flags=re.IGNORECASE | re.MULTILINE)
-
-    return text
-
-# ---------- Logo ----------
 LOGO_FILE = "StartWiseLogo.jpeg"
 logo_base64 = get_image_as_base64(LOGO_FILE)
 
-# ---------- Styles ----------
+# --- UI: CSS ---------------------------------------------------------------
+
 APPLE_TAILWIND_CSS = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-
     html, body, [data-testid="stAppViewContainer"] {
         background-color: #000000;
         color: #FFFFFF;
         font-family: 'Inter', sans-serif;
     }
-
     .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
         max-width: 1200px !important;
     }
-
     .apple-hero-title {
         font-size: 4rem;
         font-weight: 700;
@@ -60,7 +58,6 @@ APPLE_TAILWIND_CSS = """
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
-
     .apple-hero-subtitle {
         font-size: 1.5rem;
         font-weight: 400;
@@ -68,7 +65,6 @@ APPLE_TAILWIND_CSS = """
         color: #888888;
         margin: 0 auto 3rem auto;
     }
-
     .apple-hero-container {
         display: flex;
         align-items: center;
@@ -76,14 +72,12 @@ APPLE_TAILWIND_CSS = """
         gap: 1.5rem;
         margin-bottom: 1rem;
     }
-
     .apple-hero-container img {
         width: 90px;
         height: 90px;
         border-radius: 12px;
         flex-shrink: 0;
     }
-
     .apple-page-title {
         font-size: 3rem;
         font-weight: 700;
@@ -91,7 +85,6 @@ APPLE_TAILWIND_CSS = """
         margin-bottom: 2rem;
         text-align: center;
     }
-
     .apple-card {
         background-color: #1a1a1a;
         border-radius: 12px;
@@ -101,29 +94,26 @@ APPLE_TAILWIND_CSS = """
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         cursor: pointer;
     }
-
     .apple-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
     }
-
     div.stButton > button {
         background-color: #1a1a1a;
         color: #FFFFFF;
         border: 1px solid #333333;
         border-radius: 9999px;
         padding: 10px 20px;
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 500;
         transition: background-color 0.2s, border-color 0.2s;
         cursor: pointer;
+        white-space: nowrap; /* prevent wrapping like "Hom\\ne" */
     }
-
     div.stButton > button:hover {
         background-color: #333333;
         border-color: #555555;
     }
-
     .apple-nav-container {
         width: 100%;
         border-bottom: 1px solid #2a2a2a;
@@ -132,7 +122,6 @@ APPLE_TAILWIND_CSS = """
         background-color: #101010;
         border-radius: 12px;
     }
-
     .apple-nav-container [data-testid="stButton"] > button {
         background: none !important;
         border: none !important;
@@ -142,14 +131,13 @@ APPLE_TAILWIND_CSS = """
         font-weight: 500;
         text-align: center;
         width: 100%;
+        white-space: nowrap; /* prevent wrapping in nav */
     }
-
     .apple-nav-container [data-testid="stButton"] > button:hover {
         color: #FFFFFF !important;
         background: none !important;
         border: none !important;
     }
-
     .apple-nav-container [data-testid="stButton"] > button:disabled {
         font-weight: 600;
         color: #FFFFFF !important;
@@ -157,7 +145,6 @@ APPLE_TAILWIND_CSS = """
         border: none !important;
         cursor: default !important;
     }
-
     [data-testid="stTextInput"] > div > div > input,
     [data-testid="stTextArea"] > div > div > textarea {
         background-color: #1a1a1a;
@@ -168,16 +155,15 @@ APPLE_TAILWIND_CSS = """
         font-size: 1rem;
         font-family: 'Inter', sans-serif;
     }
-
-    [data-testid="stTextArea"] > div > div > textarea { min-height: 100px; }
-
+    [data-testid="stTextArea"] > div > div > textarea {
+        min-height: 100px;
+    }
     [data-testid="stTextInput"] > div > div > input::placeholder,
     [data-testid="stTextArea"] > div > div > textarea::placeholder {
         color: #777777;
         font-size: 0.9rem;
         font-style: italic;
     }
-
     [data-testid="stTextInput"] label,
     [data-testid="stTextArea"] label {
         color: #AAAAAA;
@@ -185,7 +171,6 @@ APPLE_TAILWIND_CSS = """
         padding-bottom: 5px;
         font-size: 1.3rem !important;
     }
-
     .apple-primary-button-container div.stButton > button {
         background-color: #007AFF !important;
         color: #FFFFFF !important;
@@ -198,19 +183,16 @@ APPLE_TAILWIND_CSS = """
         width: auto;
         margin-top: 1.5rem;
     }
-
     .apple-primary-button-container div.stButton > button:disabled {
         background: #333 !important;
         color: #FFFFFF !important;
         border: none !important;
     }
-
     .apple-primary-button-container div.stButton > button:hover {
         background-color: #0056b3 !important;
         color: #FFFFFF !important;
         border: none !important;
     }
-
     .input-summary-section {
         background-color: #101010;
         border: 1px solid #2a2a2a;
@@ -234,7 +216,6 @@ APPLE_TAILWIND_CSS = """
         word-wrap: break-word;
         font-style: italic;
     }
-
     .brand-output-section {
         background-color: #1a1a1a;
         border-radius: 12px;
@@ -242,7 +223,6 @@ APPLE_TAILWIND_CSS = """
         margin-top: 2rem;
         border: 1px solid #2a2a2a;
     }
-
     .brand-output-section h2 {
         font-size: 1.5rem;
         font-weight: 600;
@@ -251,7 +231,6 @@ APPLE_TAILWIND_CSS = """
         padding-bottom: 0.5rem;
         margin-bottom: 1.5rem;
     }
-
     .brand-output-section p {
         font-size: 1rem;
         color: #E0E0E0;
@@ -259,7 +238,6 @@ APPLE_TAILWIND_CSS = """
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
-
     .brand-output-section pre {
         white-space: pre-wrap;
         word-wrap: break-word;
@@ -271,7 +249,6 @@ APPLE_TAILWIND_CSS = """
         font-size: 0.95rem;
         line-height: 1.7;
     }
-
     .brand-output-section h3 {
         font-size: 1.25rem;
         font-weight: 600;
@@ -281,7 +258,6 @@ APPLE_TAILWIND_CSS = """
         border-bottom: 1px solid #333;
         padding-bottom: 0.5rem;
     }
-
     .brand-output-section h4 {
         font-size: 1.1rem;
         font-weight: 600;
@@ -289,22 +265,18 @@ APPLE_TAILWIND_CSS = """
         margin-top: 1.5rem;
         margin-bottom: 0.5rem;
     }
-
     .brand-output-section ul {
         list-style-type: disc;
         margin-left: 20px;
         padding-left: 0;
         color: #E0E0E0;
     }
-
     .brand-output-section li {
         margin-bottom: 0.5rem;
         line-height: 1.6;
         overflow-wrap: break-word;
         word-wrap: break-word;
     }
-
-    /* Table + horizontal scroll */
     .brand-output-section table {
         display: block;
         width: 100%;
@@ -316,7 +288,6 @@ APPLE_TAILWIND_CSS = """
         border-radius: 8px;
         table-layout: fixed;
     }
-
     .brand-output-section th,
     .brand-output-section td {
         border-bottom: 1px solid #333;
@@ -327,28 +298,25 @@ APPLE_TAILWIND_CSS = """
         vertical-align: top;
         border-left: 1px solid #333;
     }
-
     .brand-output-section th:first-child,
     .brand-output-section td:first-child {
         min-width: 180px;
     }
-
     .brand-output-section th {
         background-color: #2a2a2a;
         font-weight: 600;
         text-align: left;
     }
-
     .brand-output-section tr:first-child th:first-child { border-top-left-radius: 7px; }
-    .brand-output-section tr:first-child th:last-child { border-top-right-radius: 7px; }
+    .brand-output-section tr:first-child th:last-child  { border-top-right-radius: 7px; }
 
+    /* Horizontal scroll wrapper */
     .table-scroll {
         overflow-x: auto;
         overflow-y: hidden;
         width: 100%;
         padding-bottom: 8px;
     }
-
     .table-scroll::-webkit-scrollbar { height: 8px; }
     .table-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
     .table-scroll::-webkit-scrollbar-track { background: #1a1a1a; }
@@ -359,52 +327,52 @@ APPLE_TAILWIND_CSS = """
 </style>
 """
 
+# Optional: convert the first nav button to a logo button if the logo exists.
 LOGO_BUTTON_STYLE = f"""
 <style>
     .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button {{
-        background-image: url("{logo_base64}");
+        {"background-image: url('" + logo_base64 + "');" if logo_base64 else ""}
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
-        color: transparent !important;
+        {"color: transparent !important;" if logo_base64 else ""}
         width: 100%;
         height: 40px;
         border: none !important;
         background-color: #2a2a2a !important;
         padding: 0 !important;
+        white-space: nowrap;
     }}
     .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:hover {{
         background-color: #333333 !important;
-        opacity: 0.8;
-        color: transparent !important;
+        opacity: 0.85;
         border: none !important;
     }}
     .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:disabled {{
         background-color: #2a2a2a !important;
         opacity: 1.0;
-        color: transparent !important;
         border: none !important;
         cursor: default !important;
     }}
 </style>
 """
 
-# ---------- Streamlit setup ----------
 st.set_page_config(layout="wide", page_title="Brand Generator App")
 st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
-if logo_base64:
-    st.markdown(LOGO_BUTTON_STYLE, unsafe_allow_html=True)
+st.markdown(LOGO_BUTTON_STYLE, unsafe_allow_html=True)
 
-# ---------- Gemini config ----------
+# --- Gemini config (TEXT model only) ---------------------------------------
+
 try:
-    API_KEY = "AIzaSyCxm2tU8ule38Sc-qrBKAMc6pDSaRTsHh0"
+    API_KEY = "YOUR_GEMINI_API_KEY"
     genai.configure(api_key=API_KEY)
     GEMINI_ENABLED = True
 except Exception as e:
     st.error(f"Error configuring Gemini API: {e}. Please check the API key.")
     GEMINI_ENABLED = False
 
-# ---------- Prompts (no images anywhere) ----------
+# --- Prompts (no image instructions anywhere) ------------------------------
+
 SEGMENTATION_PROMPT_TEMPLATE = """
 You are a Startup Market Segmentation Expert with access to generative tools and data APIs.
 
@@ -449,7 +417,7 @@ Use realistic, India-specific details and current digital behavior cues based on
 * Highlight blind spots, compliance or regulatory concerns (e.g., FSSAI for beverages), and emerging opportunities.
 ---
 ### Step 6: Output Formatting
-Return your answer using clean, readable Markdown (headings, bullets, tables). Avoid HTML tags.
+Return your answer using clean, readable Markdown (headings, bullets) for clarity. If you create tables, ensure they are valid Markdown tables.
 ---
 ### Constraints
 * Keep it concise, practical, and realistic to the Indian market.
@@ -470,52 +438,61 @@ Based *only* on the context above (startup idea, target market, personas), gener
 Step 1 | Competitor Identification
 * Identify 5–7 direct and indirect competitors in the same product category and geography.
 * Mention each brand’s focus (e.g., RTD coffee, café chain, functional beverage).
-* Add URLs or handles where possible (assumed if unknown).
+* Add URLs or handles where possible. If you infer, mark “(assumed).”
 
-Step 2 | Competitor Landscape Summary (TABLE)
-For each competitor, include:
-* Brand Positioning
+Step 2 | Competitor Landscape Summary (Table)
+For each competitor, compile:
+* Brand Positioning (self-description)
 * Price Tier (₹ range or value vs premium)
 * Distribution Channels (retail, q-commerce, D2C, marketplaces)
-* Digital Presence summary
-* Marketing Messaging themes
+* Digital Presence (traffic source mix – inferred if needed)
+* Marketing Messaging (themes, tone)
 * Differentiators / Innovations
 
 Step 3 | Market & Category Insights
-* Key trends and consumer behaviors.
+* Key trends and consumer behaviors (reasonable inferences are fine).
 * Market trajectory (growing / maturing / fragmented).
-* 3 whitespace areas.
+* 3 whitespace areas where players underperform.
 
-Step 4 | Strategic Implications
+Step 4 | Strategic Implications for the Startup
 * Opportunities and threats.
-* Differentiation levers (tone, channels, partnerships).
+* Potential differentiation levers (tone, channels, partnerships).
 * Recommended price & distribution strategy.
 * Early creative tone suggestion.
 
-### Output
-Return **text only** with Markdown headings, lists, and one summary table. Do not include HTML.
+### Output Formatting (Text only)
+Return clean Markdown with headings, bullets, and one summary table. No code blocks.
 """
 
 MR_PROMPT_TEMPLATE = """
 You are a Brand Positioning & Targeting Strategist.
 
-Using the context below, produce **Step 2 | Audience Refinement (GenAI & Data)** only.
+---
+### Step 1 | Input Recap
+Summarize from context (reasonable inferences allowed):
+- Product Context
+- Geography
+- Model
+- Budget (Monthly Marketing) – mark ASSUMED if inferred
+- Target segments (2–3 prioritized)
+- Competitor set (3–5)
+- Category drivers (3–5)
 
-Context:
-{segmentation_data}
-
-For each target segment identified in the context:
-• Derive Audience DNA: demographics, top interests, reach/CPM, negative audiences  
-• Estimate CPM/CPC, CTR, CVR (mark **ASSUMED** if no exact data)  
-• Provide summary:  
-  - Audience DNA paragraph  
-  - Top 5 interests/keywords with source hint  
+---
+### Step 2 | Audience Refinement (Text only)
+For each target segment:
+• Audience DNA: demographics, top interests, negative audiences  
+• Estimated CPM/CPC, CTR, CVR (mark **ASSUMED** if inferred)  
+• Summary:
+  - Audience DNA paragraph
+  - Top 5 interests/keywords
   - Estimated Reach, CPM (₹), CPC (₹), Channels
 
-Return text only, using Markdown. Do not add questions at the end.
+Restrict at Step 2 in this response. Do not ask questions at the end.
 """
 
-# ---------- State ----------
+# --- State -----------------------------------------------------------------
+
 PAGE_NAMES = {
     "Home": "main_page",
     "Segment View": "page_a",
@@ -540,70 +517,73 @@ if 'target_lens_output' not in st.session_state:
 if 'market_radar_output' not in st.session_state:
     st.session_state.market_radar_output = None
 
+# --- Navigation ------------------------------------------------------------
+
 def navigate_to(page_key):
     st.session_state.current_page = page_key
 
 def create_main_navbar():
     st.markdown('<div class="apple-nav-container">', unsafe_allow_html=True)
     cols = st.columns([1, 2, 2, 2, 2, 2])
-
     page_keys = list(PAGE_NAMES.keys())
-    page_values = list(PAGE_NAMES.values())
+    page_vals = list(PAGE_NAMES.values())
 
     with cols[0]:
-        is_active = st.session_state.current_page == page_values[0]
+        is_active = st.session_state.current_page == page_vals[0]
         if st.button(page_keys[0], key="nav_home", disabled=is_active):
-            navigate_to(page_values[0]); st.rerun()
+            navigate_to(page_vals[0]); st.rerun()
+
     with cols[1]:
-        is_active = st.session_state.current_page == page_values[1]
+        is_active = st.session_state.current_page == page_vals[1]
         if st.button(page_keys[1], key="nav_branding", disabled=is_active):
-            navigate_to(page_values[1]); st.rerun()
+            navigate_to(page_vals[1]); st.rerun()
+
     with cols[2]:
-        is_active = st.session_state.current_page == page_values[2]
+        is_active = st.session_state.current_page == page_vals[2]
         if st.button(page_keys[2], key="nav_mac", disabled=is_active):
-            navigate_to(page_values[2]); st.rerun()
+            navigate_to(page_vals[2]); st.rerun()
+
     with cols[3]:
-        is_active = st.session_state.current_page == page_values[3]
+        is_active = st.session_state.current_page == page_vals[3]
         if st.button(page_keys[3], key="nav_iphone", disabled=is_active):
-            navigate_to(page_values[3]); st.rerun()
+            navigate_to(page_vals[3]); st.rerun()
+
     with cols[4]:
-        is_active = st.session_state.current_page == page_values[4]
+        is_active = st.session_state.current_page == page_vals[4]
         if st.button(page_keys[4], key="nav_watch", disabled=is_active):
-            navigate_to(page_values[4]); st.rerun()
+            navigate_to(page_vals[4]); st.rerun()
+
     with cols[5]:
-        is_active = st.session_state.current_page == page_values[5]
+        is_active = st.session_state.current_page == page_vals[5]
         if st.button(page_keys[5], key="nav_airpods", disabled=is_active):
-            navigate_to(page_values[5]); st.rerun()
+            navigate_to(page_vals[5]); st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ---------- Gemini calls ----------
+# --- Gemini calls (TEXT model only) ----------------------------------------
+
 def get_segmentation_output(idea, launch_plan):
     if not GEMINI_ENABLED:
         return "Error: Gemini API is not configured. Please check your API key."
 
     model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
     prompt = SEGMENTATION_PROMPT_TEMPLATE.format(idea=idea, launch_plan=launch_plan)
-
     try:
-        response = model.generate_content(prompt)
-        text = sanitize_generated_markdown(response.text or "")
-        return text
+        resp = model.generate_content(prompt)
+        text = resp.text or ""
+        return clean_model_markdown(text)
     except Exception as e:
         st.error(f"An error occurred while calling the Gemini API: {e}")
         return f"Error: Could not generate content. {e}"
 
 def get_target_lens_output(segmentation_data: str):
-    """Text-only competitive analysis; uses flash-preview (no images)."""
     if not GEMINI_ENABLED:
-        return "Error: Gemini API is not configured."
-
+        return "Error: Gemini API is not configured. Please check your API key."
     model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
     prompt = TL_PROMPT_TEMPLATE.format(segmentation_data=segmentation_data)
-
     try:
-        response = model.generate_content(prompt)
-        return sanitize_generated_markdown(response.text or "")
+        resp = model.generate_content(prompt)
+        return clean_model_markdown(resp.text or "")
     except Exception as e:
         st.error(f"An error occurred while calling the Gemini API: {e}")
         return f"Error: Could not generate content. {e}"
@@ -611,21 +591,19 @@ def get_target_lens_output(segmentation_data: str):
 def get_market_radar_output(segmentation_data: str):
     if not GEMINI_ENABLED:
         return "Error: Gemini API is not configured. Please check your API key."
-
     model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
     prompt = MR_PROMPT_TEMPLATE.format(segmentation_data=segmentation_data)
-
     try:
-        response = model.generate_content(prompt)
-        return sanitize_generated_markdown(response.text or "")
+        resp = model.generate_content(prompt)
+        return clean_model_markdown(resp.text or "")
     except Exception as e:
         st.error(f"An error occurred while calling the Gemini API for Market Radar: {e}")
         return f"Error: Could not generate Market Radar content. {e}"
 
-# ---------- Pages ----------
+# --- Pages -----------------------------------------------------------------
+
 def main_page():
     create_main_navbar()
-
     logo_html = f'<img src="{logo_base64}" alt="StartWise Logo">' if logo_base64 else ""
     st.markdown(f"""
     <div class="apple-hero-container">
@@ -633,23 +611,15 @@ def main_page():
         <div class="apple-hero-title">Build smarter, launch faster.</div>
     </div>
     """, unsafe_allow_html=True)
-
-    st.markdown(
-        '<p class="apple-hero-subtitle">Tell us what your brand stands for, and we’ll do the rest.</p>',
-        unsafe_allow_html=True
-    )
+    st.markdown('<p class="apple-hero-subtitle">Tell us what your brand stands for, and we’ll do the rest.</p>', unsafe_allow_html=True)
 
     with st.form(key="brand_form"):
-        idea = st.text_area(
-            "What idea do you have in mind?",
-            placeholder="What is your product or service? What makes your product unique? How will you sell it?",
-            height=100
-        )
-        launch_plan = st.text_area(
-            "What are your thoughts on a launch plan?",
-            placeholder="Where are you launching first? Who is your ideal customer? Any constraints?",
-            height=100
-        )
+        idea = st.text_area("What idea do you have in mind?",
+                            placeholder="What is your product or service? What makes it unique? How will you sell it?",
+                            height=100)
+        launch_plan = st.text_area("What are your thoughts on a launch plan?",
+                                   placeholder="Where are you launching first? Who is your ideal customer? Any constraints?",
+                                   height=100)
 
         st.markdown('<div class="apple-primary-button-container" style="display: flex; justify-content: center;">', unsafe_allow_html=True)
         submitted = st.form_submit_button("Generate Brand Identity", type="primary", disabled=not GEMINI_ENABLED)
@@ -670,10 +640,8 @@ def main_page():
 
 def page_a():
     create_main_navbar()
-
     if st.session_state.startup_idea and st.session_state.startup_launch_plan:
         st.markdown('<h1 class="apple-page-title">Segment View</h1>', unsafe_allow_html=True)
-
         st.markdown(f"""
         <div class="input-summary-section">
             <h3>Startup Idea</h3>
@@ -688,25 +656,23 @@ def page_a():
         if st.session_state.generating:
             with st.spinner("Generating Brand Strategy (3 steps)..."):
                 st.write("Step 1/3: Generating Market Segmentation...")
-                segmentation_output = get_segmentation_output(
-                    st.session_state.startup_idea,
-                    st.session_state.startup_launch_plan
-                )
-                st.session_state.segmentation_output = segmentation_output
+                seg = get_segmentation_output(st.session_state.startup_idea, st.session_state.startup_launch_plan)
+                st.session_state.segmentation_output = seg
 
-                if segmentation_output and not segmentation_output.startswith("Error:"):
+                if seg and not seg.startswith("Error:"):
                     st.write("Step 2/3: Generating Competitive Analysis...")
-                    st.session_state.target_lens_output = get_target_lens_output(segmentation_output)
+                    tl = get_target_lens_output(seg)
+                    st.session_state.target_lens_output = tl
 
                     st.write("Step 3/3: Generating Positioning Strategy...")
-                    st.session_state.market_radar_output = get_market_radar_output(segmentation_output)
+                    mr = get_market_radar_output(seg)
+                    st.session_state.market_radar_output = mr
 
                     st.write("Generation complete!")
                 else:
                     st.error("Error during Step 1: Segmentation. Halting generation.")
-                    st.session_state.target_lens_output = "Error: Could not generate Target Lens data because Segmentation failed."
-                    st.session_state.market_radar_output = "Error: Could not generate Market Radar data because Segmentation failed."
-
+                    st.session_state.target_lens_output = "Error: Could not generate Target Lens because Segmentation failed."
+                    st.session_state.market_radar_output = "Error: Could not generate Market Radar because Segmentation failed."
                 st.session_state.generating = False
 
         if st.session_state.segmentation_output:
@@ -722,15 +688,13 @@ def page_a():
             )
         elif not st.session_state.generating:
             output_placeholder.error("There was an issue generating the segmentation output.")
-
     else:
         st.markdown('<h1 class="apple-page-title">Segment View</h1>', unsafe_allow_html=True)
         st.markdown("## Define Your Identity.")
-        st.markdown("""
-            <p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;">
-            <i>To generate a brand identity, please return to the <b>Home</b> page and fill out the form.</i>
-            </p>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            '<p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;"><i>To generate a brand identity, please return to the <b>Home</b> page and fill out the form.</i></p>',
+            unsafe_allow_html=True
+        )
 
 def page_b():
     create_main_navbar()
@@ -750,28 +714,26 @@ def page_b():
 
         if st.session_state.target_lens_output:
             text_output = st.session_state.target_lens_output
-            with output_placeholder.container():
-                st.markdown(
-                    f'''
-                    <div class="brand-output-section">
-                        <div class="table-scroll">
-                            {text_output}
-                        </div>
+            output_placeholder.markdown(
+                f'''
+                <div class="brand-output-section">
+                    <div class="table-scroll">
+                        {text_output}
                     </div>
-                    ''',
-                    unsafe_allow_html=True
-                )
+                </div>
+                ''',
+                unsafe_allow_html=True
+            )
         elif st.session_state.generating:
             output_placeholder.info("Your analysis is being generated. Please wait...")
         else:
             output_placeholder.warning("Could not find generated analysis. Please try submitting the form again from the Home page.")
     else:
         st.markdown("## Analyze Your Competition.")
-        st.markdown("""
-            <p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;">
-            <i>To generate a competitive analysis, please return to the <b>Home</b> page and fill out the form.</i>
-            </p>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            '<p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;"><i>To generate a competitive analysis, please return to the <b>Home</b> page and fill out the form.</i></p>',
+            unsafe_allow_html=True
+        )
 
 def page_c():
     create_main_navbar()
@@ -788,7 +750,6 @@ def page_c():
         """, unsafe_allow_html=True)
 
         output_placeholder = st.empty()
-
         if st.session_state.market_radar_output:
             output_placeholder.markdown(
                 f'<div class="brand-output-section">{st.session_state.market_radar_output}</div>',
@@ -800,11 +761,10 @@ def page_c():
             output_placeholder.warning("Could not find generated analysis. Please try submitting the form again from the Home page.")
     else:
         st.markdown("## Define Your Positioning.")
-        st.markdown("""
-            <p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;">
-            <i>To generate a positioning and targeting strategy, please return to the <b>Home</b> page and fill out the form.</i>
-            </p>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            '<p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;"><i>To generate a positioning and targeting strategy, please return to the <b>Home</b> page and fill out the form.</i></p>',
+            unsafe_allow_html=True
+        )
 
 def page_d():
     create_main_navbar()
@@ -831,14 +791,15 @@ def page_e():
         AirPods Max deliver unparalleled high-fidelity audio with industry-leading Active Noise Cancellation.
         They've been updated with USB-C and extended battery life.
         </p>
-        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
+        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0%;">
             <li>**H3 Chip:** Advanced computational audio processing.</li>
             <li>**Lossless Audio:** Support for high-resolution lossless audio.</li>
             <li>**New Carrying Case:** Ultra-low power mode for extended standby.</li>
         </ul>
     """, unsafe_allow_html=True)
 
-# ---------- Router ----------
+# --- Router ----------------------------------------------------------------
+
 page_functions = {
     PAGE_NAMES["Home"]: main_page,
     PAGE_NAMES["Segment View"]: page_a,
@@ -847,5 +808,4 @@ page_functions = {
     PAGE_NAMES["Roadmap"]: page_d,
     PAGE_NAMES["Pricing"]: page_e,
 }
-
 page_functions[st.session_state.current_page]()
