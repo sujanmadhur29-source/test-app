@@ -367,6 +367,29 @@ APPLE_TAILWIND_CSS = """
         border-top-right-radius: 7px; /* Rounded corner */
     }
 
+    /* Horizontal scroll container for wide tables */
+.table-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    padding-bottom: 8px; /* gives space for scrollbar */
+}
+
+/* Optional styling for the scrollbar (clean minimal look) */
+.table-scroll::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+
 
     /* Hide default Streamlit Chrome for a cleaner look */
     #MainMenu {visibility: hidden;}
@@ -921,9 +944,16 @@ def page_a():
         # Display the generated output for *this page*
         if st.session_state.segmentation_output:
             output_placeholder.markdown(
-                f'<div class="brand-output-section">{st.session_state.segmentation_output}</div>', 
-                unsafe_allow_html=True
-            )
+    f'''
+    <div class="brand-output-section">
+        <div class="table-scroll">
+            {st.session_state.segmentation_output}
+        </div>
+    </div>
+    ''',
+    unsafe_allow_html=True
+)
+
         elif not st.session_state.generating:
              output_placeholder.error("There was an issue generating the segmentation output.")
 
@@ -967,9 +997,16 @@ def page_b():
             with output_placeholder.container():
                 if text_output:
                     st.markdown(
-                        f'<div class="brand-output-section">{text_output}</div>', 
-                        unsafe_allow_html=True
-                    )
+    f'''
+    <div class="brand-output-section">
+        <div class="table-scroll">
+            {text_output}
+        </div>
+    </div>
+    ''',
+    unsafe_allow_html=True
+)
+
                 
                 if image_output:
                     st.markdown('<div class="brand-output-section" style="margin-top: 2rem;">', unsafe_allow_html=True)
