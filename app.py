@@ -567,16 +567,8 @@ Summarize:
 * Early creative tone suggestion.
 
 ---
-### Step 6: Generated Visuals
-Based on all the analysis above, generate the following three images. Do not add any extra text, just the images.
-
-1.  **Market Perceptual Map:** A 2x2 matrix for the competitor landscape (e.g., axes: Price vs. Niche).
-2.  **Market Share Pie Chart:** An estimated market share pie chart for the identified competitors.
-3.  **Sentiment Word Clouds:** Two simple word clouds, one for Positive and one for Negative customer sentiment.
----
-
-### Step 7: Output Formatting (Text)
-Return all text output from Steps 1-5 as plain text sections:
+### Output Formatting (Text only)
+Return **text only** (no images) in these sections:
 Competitor Landscape Overview:
 <paragraph>
 Competitor Snapshots:
@@ -821,46 +813,31 @@ def get_segmentation_output(idea, launch_plan):
 
 
 # --- NEW: Target Lens Gemini Function ---
-def get_target_lens_output(segmentation_data: str):
+def get_target_lens_output(segmentation_data: str) -> str:
     """
-    Calls the Gemini API with the Target Lens prompt, using segmentation
-    data as context. Now returns both text and images.
+    Text-only Competitive Landscape (Target Lens).
+    Uses gemini-2.5-flash-preview-09-2025 (no images) to avoid the image model quotas.
+    Returns a plain string; caller renders it directly.
     """
     if not GEMINI_ENABLED:
-        return {"text": "Error: Gemini API is not configured.", "images": []}
-        
-    # --- MODEL CHANGED HERE ---
-    model = genai.GenerativeModel("gemini-2.5-flash-image-preview")
-    
-    # Format the prompt with the segmentation output
-    prompt = TL_PROMPT_TEMPLATE.format(segmentation_data=segmentation_data)
-    
-    try:
-        # --- GENERATION CALL CHANGED HERE ---
-        # Removed the 'generation_config' with 'responseModalities' as it caused the error.
-        # The 'gemini-2.5-flash-image-preview' model automatically handles multiple modalities.
-        response = model.generate_content(prompt)
-        
-        # --- RESPONSE PROCESSING CHANGED HERE ---
-        text_output = ""
-        image_outputs = []
-        
-        if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
-            for part in response.candidates[0].content.parts:
-                if 'text' in part:
-                    text_output += part.text + "\n"
-                elif 'inlineData' in part:
-                    img_data = part.inlineData
-                    base64_data = img_data.data
-                    mime_type = img_data.mimeType
-                    image_url = f"data:{mime_type};base64,{base64_data}"
-                    image_outputs.append(image_url)
-                    
-        return {"text": text_output, "images": image_outputs}
+        return "Error: Gemini API is not configured."
 
-    except Exception as e:
-        st.error(f"An error occurred while calling the Gemini API: {e}")
-        return {"text": f"Error: Could not generate content. {e}", "images": []}
+    model = genai.GenerativeModel("gemini-2.5-flash-preview-09-2025")
+    prompt = TL_PROMPT_TEMPLATE.format(segmentation_data=segmentation_data)
+
+    # tiny, safe retry once on rate limit
+    for attempt in range(2):
+        try:
+            resp = model.generate_content(prompt)
+            return resp.text or "No content returned."
+        except Exception as e:
+            msg = str(e)
+            if "429" in msg and attempt == 0:
+                # brief pause then retry once
+                time.sleep(2.0)
+                continue
+            st.error(f"An error occurred while calling the Gemini API: {e}")
+            return "Error: Could not generate competitive analysis."
 
 # --- NEW: Market Radar Gemini Function ---
 def get_market_radar_output(segmentation_data: str):
@@ -969,13 +946,11 @@ def page_a():
 
 
 def page_b():
-    """Target Lens Page - NOW DYNAMIC with Text and Images"""
+    """Target Lens Page - text only"""
     create_main_navbar()
     st.markdown('<h1 class="apple-page-title">Target Lens</h1>', unsafe_allow_html=True)
-    
-    # Check if inputs exist
+
     if st.session_state.startup_idea and st.session_state.startup_launch_plan:
-        # Display the inputs for context
         st.markdown(f"""
         <div class="input-summary-section">
             <h3>Startup Idea</h3>
@@ -984,58 +959,26 @@ def page_b():
             <p>"{st.session_state.startup_launch_plan}"</p>
         </div>
         """, unsafe_allow_html=True)
-        
+
         output_placeholder = st.empty()
-        
-        # Check if the output for this page already exists
+
         if st.session_state.target_lens_output:
-            # --- RENDER LOGIC CHANGED HERE ---
-            output_data = st.session_state.target_lens_output
-            text_output = output_data.get("text")
-            image_output = output_data.get("images", [])
-
-            with output_placeholder.container():
-                if text_output:
-                    st.markdown(
-    f'''
-    <div class="brand-output-section">
-        <div class="table-scroll">
-            {text_output}
-        </div>
-    </div>
-    ''',
-    unsafe_allow_html=True
-)
-
-                
-                if image_output:
-                    st.markdown('<div class="brand-output-section" style="margin-top: 2rem;">', unsafe_allow_html=True)
-                    st.markdown("<h3>Generated Visuals</h3>", unsafe_allow_html=True)
-                    # Display images in columns for better layout
-                    
-                    # Ensure we have at least 1 column
-                    num_cols = len(image_output) if len(image_output) > 0 else 1
-                    cols = st.columns(num_cols)
-                    
-                    for i, img_url in enumerate(image_output):
-                        # Use modulo for safety in case num_cols is 0, though we guard for it
-                        with cols[i % num_cols]:
-                            st.image(img_url, use_column_width=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
-                
-                if not text_output and not image_output:
-                    st.warning("Generation complete, but no content was returned. The prompt might need adjustment.")
-            # --- END OF RENDER LOGIC CHANGE ---
-        
-        # If it's currently generating, show a spinner
+            text_output = st.session_state.target_lens_output
+            output_placeholder.markdown(
+                f'''
+                <div class="brand-output-section">
+                    <div class="table-scroll">
+                        {text_output}
+                    </div>
+                </div>
+                ''',
+                unsafe_allow_html=True
+            )
         elif st.session_state.generating:
-             output_placeholder.info("Your analysis is being generated. Please wait...")
-        # Fallback: If output doesn't exist but inputs do (e.g., error in first step)
+            output_placeholder.info("Your analysis is being generated. Please wait...")
         else:
             output_placeholder.warning("Could not find generated analysis. Please try submitting the form again from the Home page.")
-            
     else:
-        # Default content if no inputs
         st.markdown("## Analyze Your Competition.")
         st.markdown("""
             <p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;">
