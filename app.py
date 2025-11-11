@@ -52,9 +52,10 @@ APPLE_TAILWIND_CSS = """
         background-color: #FFFFFF; /* White */
         color: #333333; /* Dark text */
         font-family: 'Inter', sans-serif;
+        padding-top: 64px; /* offset for fixed top nav */
     }
     .block-container {
-        padding-top: 0rem; /* Changed from 2rem to 0rem */
+        padding-top: 0rem; /* keep content tight to top under nav */
         padding-bottom: 2rem;
         max-width: 1200px !important;
     }
@@ -112,7 +113,7 @@ APPLE_TAILWIND_CSS = """
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow */
     }
     
-    /* Default button (secondary) */
+    /* Default button (secondary) - rounded for general buttons */
     div.stButton > button {
         background-color: #FFFFFF; /* White */
         color: #0A2351; /* Dark Blue text */
@@ -130,35 +131,47 @@ APPLE_TAILWIND_CSS = """
         border-color: #003366; /* Darker blue */
     }
     
-    /* Navbar */
+    /* TOP NAVBAR (full-width, single bar, square buttons, hover highlight) */
     .apple-nav-container {
-        width: 100%;
-        border-bottom: 1px solid #000033; /* Darker blue border */
-        margin-bottom: 3rem;
-        padding: 0.5rem 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        height: 56px;
+        display: flex;
+        align-items: center;
         background-color: #0A2351; /* Dark Blue */
-        border-radius: 12px;
+        border-bottom: 1px solid #000033; /* Darker blue border */
+        z-index: 1000;
+        border-radius: 0; /* single straight bar */
+        padding: 0; /* flush edges */
+    }
+    /* ensure the inner Streamlit columns row stretches edge-to-edge */
+    .apple-nav-inner {
+        width: 100%;
+        max-width: 100%;
+        padding: 0 8px; /* small breathing room */
     }
     .apple-nav-container [data-testid="stButton"] > button {
-        background: none !important;
+        background: transparent !important;
         border: none !important;
         color: #A9B4C2 !important; /* Light gray-blue text */
-        padding: 12px 10px !important; /* a bit taller for better hit area */
+        padding: 14px 18px !important;
         font-size: 0.95rem;
-        font-weight: 500;
+        font-weight: 600;
         text-align: center;
         width: 100%;
         white-space: nowrap;
+        border-radius: 0 !important; /* square buttons */
     }
     .apple-nav-container [data-testid="stButton"] > button:hover {
         color: #FFFFFF !important; /* White */
-        background: none !important;
-        border: none !important;
+        background-color: rgba(255,255,255,0.12) !important; /* hover highlight */
     }
     .apple-nav-container [data-testid="stButton"] > button:disabled {
-        font-weight: 600;
-        color: #FFFFFF !important; /* White (active) */
-        background: none !important;
+        color: #FFFFFF !important; /* active tab */
+        background-color: rgba(255,255,255,0.18) !important; /* active highlight */
         border: none !important;
         cursor: default !important;
     }
@@ -368,26 +381,27 @@ div[class*="stTextArea"] label {
 # Optional: convert the first nav button to a logo button if the logo exists.
 LOGO_BUTTON_STYLE = f"""
 <style>
-    .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button {{
+    .apple-nav-container [data-testid=\"stColumn\"]:first-child [data-testid=\"stButton\"] > button {{
         {"background-image: url('" + logo_base64 + "');" if logo_base64 else ""}
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
         width: 100%;
-        height: 56px; /* was 0px; now visible */
+        height: 56px; /* visible height matches nav */
         border: none !important;
         padding: 0 !important;
         white-space: nowrap;
         font-size: 0; /* hide text label while keeping button height */
         line-height: 0;
+        border-radius: 0 !important; /* square */
     }}
-    .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:hover {{
+    .apple-nav-container [data-testid=\"stColumn\"]:first-child [data-testid=\"stButton\"] > button:hover {{
         opacity: 0.9;
         border: none !important;
-        background-color: transparent !important;
+        background-color: rgba(255,255,255,0.12) !important;
     }}
-    .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:disabled {{
-        background-color: transparent !important; /* match navbar */
+    .apple-nav-container [data-testid=\"stColumn\"]:first-child [data-testid=\"stButton\"] > button:disabled {{
+        background-color: rgba(255,255,255,0.18) !important;
         opacity: 1.0;
         border: none !important;
         cursor: default !important;
@@ -562,8 +576,8 @@ def navigate_to(page_key):
     st.session_state.current_page = page_key
 
 def create_main_navbar():
-    # Wrap nav in a styled container so CSS rules apply and to avoid stray closing </div>
-    st.markdown('<div class="apple-nav-container">', unsafe_allow_html=True)
+    # Full-width, single-bar nav. The outer container is fixed to top via CSS.
+    st.markdown('<div class="apple-nav-container"><div class="apple-nav-inner">', unsafe_allow_html=True)
 
     cols = st.columns([2, 2, 2, 2, 2, 2])
     page_keys = list(PAGE_NAMES.keys())
@@ -599,7 +613,7 @@ def create_main_navbar():
         if st.button(page_keys[5], key="nav_airpods", disabled=is_active):
             navigate_to(page_vals[5]); st.rerun()
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 # --- Gemini calls (TEXT model only) ----------------------------------------
 
