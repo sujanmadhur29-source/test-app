@@ -18,14 +18,22 @@ def get_image_as_base64(file_path):
 
 def clean_model_markdown(text: str) -> str:
     """
-    Cleanups for model output so we don't render stray HTML tags as text:
+    Cleanups for model output so we don't render stray HTML tags as text and
+    remove unwanted headings like "Generated Persona Image".
+
     - remove any lines that are just <div> or </div>
     - (safety) remove bare opening/closing div tags inline as well
+    - strip lines containing the phrase "Generated Persona Image" (any case)
+    - collapse extra whitespace
     """
     # remove lines that only contain <div> or </div> (with optional spaces)
     text = re.sub(r"^\s*</?div>\s*$", "", text, flags=re.IGNORECASE | re.MULTILINE)
     # remove any stray standalone <div> / </div> that might appear inline
     text = re.sub(r"\s*</?div>\s*", " ", text, flags=re.IGNORECASE)
+    # remove headings/lines that mention "Generated Persona Image"
+    text = re.sub(r"^.*Generated\s*Persona\s*Image.*$", "", text, flags=re.IGNORECASE | re.MULTILINE)
+    # compact multiple blank lines
+    text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
 
 # --- Branding assets -------------------------------------------------------
@@ -33,36 +41,38 @@ def clean_model_markdown(text: str) -> str:
 LOGO_FILE = "StartWiseLogo.jpeg"
 logo_base64 = get_image_as_base64(LOGO_FILE)
 
-# --- UI: CSS ---------------------------------------------------------------
+# --- UI: CSS (NEW WHITE/DARK BLUE THEME) -----------------------------------
 
 APPLE_TAILWIND_CSS = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+    
+    /* Page background and default text */
     html, body, [data-testid="stAppViewContainer"] {
-        background-color: #000000;
-        color: #FFFFFF;
+        background-color: #FFFFFF; /* White */
+        color: #333333; /* Dark text */
         font-family: 'Inter', sans-serif;
     }
     .block-container {
-        padding-top: 2rem;
+        padding-top: 0rem; /* Changed from 2rem to 0rem */
         padding-bottom: 2rem;
         max-width: 1200px !important;
     }
+    
+    /* Hero styles */
     .apple-hero-title {
         font-size: 4rem;
         font-weight: 700;
         line-height: 1.1;
         text-align: left;
         margin-bottom: 0;
-        background: linear-gradient(180deg, #FFFFFF, #B0B0B0);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #0A2351; /* Dark Blue */
     }
     .apple-hero-subtitle {
         font-size: 1.5rem;
         font-weight: 400;
         text-align: center;
-        color: #888888;
+        color: #555555; /* Darker gray */
         margin: 0 auto 3rem auto;
     }
     .apple-hero-container {
@@ -84,72 +94,81 @@ APPLE_TAILWIND_CSS = """
         line-height: 1.2;
         margin-bottom: 2rem;
         text-align: center;
+        color: #333333; /* Dark text */
     }
+    
+    /* Card styles */
     .apple-card {
-        background-color: #1a1a1a;
+        background-color: #F8F8F8; /* Light gray */
         border-radius: 12px;
         padding: 30px;
         margin-bottom: 20px;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Light shadow */
         cursor: pointer;
     }
     .apple-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow */
     }
+    
+    /* Default button (secondary) */
     div.stButton > button {
-        background-color: #1a1a1a;
-        color: #FFFFFF;
-        border: 1px solid #333333;
+        background-color: #FFFFFF; /* White */
+        color: #0A2351; /* Dark Blue text */
+        border: 1px solid #0A2351; /* Dark Blue border */
         border-radius: 9999px;
         padding: 10px 20px;
         font-size: 0.95rem;
         font-weight: 500;
         transition: background-color 0.2s, border-color 0.2s;
         cursor: pointer;
-        white-space: nowrap; /* prevent wrapping like "Hom\\ne" */
+        white-space: nowrap;
     }
     div.stButton > button:hover {
-        background-color: #333333;
-        border-color: #555555;
+        background-color: #F0F8FF; /* Very light blue */
+        border-color: #003366; /* Darker blue */
     }
+    
+    /* Navbar */
     .apple-nav-container {
         width: 100%;
-        border-bottom: 1px solid #2a2a2a;
+        border-bottom: 1px solid #000033; /* Darker blue border */
         margin-bottom: 3rem;
         padding: 0.5rem 0;
-        background-color: #101010;
+        background-color: #0A2351; /* Dark Blue */
         border-radius: 12px;
     }
     .apple-nav-container [data-testid="stButton"] > button {
         background: none !important;
         border: none !important;
-        color: #888888 !important;
-        padding: 5px 10px !important;
+        color: #A9B4C2 !important; /* Light gray-blue text */
+        padding: 12px 10px !important; /* a bit taller for better hit area */
         font-size: 0.95rem;
         font-weight: 500;
         text-align: center;
         width: 100%;
-        white-space: nowrap; /* prevent wrapping in nav */
+        white-space: nowrap;
     }
     .apple-nav-container [data-testid="stButton"] > button:hover {
-        color: #FFFFFF !important;
+        color: #FFFFFF !important; /* White */
         background: none !important;
         border: none !important;
     }
     .apple-nav-container [data-testid="stButton"] > button:disabled {
         font-weight: 600;
-        color: #FFFFFF !important;
+        color: #FFFFFF !important; /* White (active) */
         background: none !important;
         border: none !important;
         cursor: default !important;
     }
+    
+    /* Inputs and Text Areas */
     [data-testid="stTextInput"] > div > div > input,
     [data-testid="stTextArea"] > div > div > textarea {
-        background-color: #1a1a1a;
-        color: #FFFFFF;
-        border: 1px solid #333333;
+        background-color: #FFFFFF; /* White */
+        color: #333333; /* Dark text */
+        border: 1px solid #CCCCCC; /* Light gray border */
         border-radius: 8px;
         padding: 12px 15px;
         font-size: 1rem;
@@ -160,20 +179,22 @@ APPLE_TAILWIND_CSS = """
     }
     [data-testid="stTextInput"] > div > div > input::placeholder,
     [data-testid="stTextArea"] > div > div > textarea::placeholder {
-        color: #777777;
+        color: #999999; /* Lighter gray placeholder */
         font-size: 0.9rem;
         font-style: italic;
     }
     [data-testid="stTextInput"] label,
     [data-testid="stTextArea"] label {
-        color: #AAAAAA;
+        color: #444444; /* Dark gray label */
         font-weight: 500;
         padding-bottom: 5px;
-        font-size: 1.3rem !important;
+        font-size: 1.1rem !important;
     }
+    
+    /* Primary button (e.g., Generate) */
     .apple-primary-button-container div.stButton > button {
-        background-color: #007AFF !important;
-        color: #FFFFFF !important;
+        background-color: #007AFF !important; /* Bright Blue */
+        color: #FFFFFF !important; /* White */
         border: none !important;
         border-radius: 9999px;
         padding: 12px 28px;
@@ -184,18 +205,20 @@ APPLE_TAILWIND_CSS = """
         margin-top: 1.5rem;
     }
     .apple-primary-button-container div.stButton > button:disabled {
-        background: #333 !important;
-        color: #FFFFFF !important;
+        background: #A9B4C2 !important; /* Light gray-blue */
+        color: #EFEFEF !important;
         border: none !important;
     }
     .apple-primary-button-container div.stButton > button:hover {
-        background-color: #0056b3 !important;
+        background-color: #0056b3 !important; /* Darker blue */
         color: #FFFFFF !important;
         border: none !important;
     }
+    
+    /* Summary section (light gray box) */
     .input-summary-section {
-        background-color: #101010;
-        border: 1px solid #2a2a2a;
+        background-color: #F8F8F8; /* Light gray */
+        border: 1px solid #E0E0E0; /* Light border */
         border-radius: 12px;
         padding: 1.5rem 2rem;
         margin-bottom: 1.5rem;
@@ -203,37 +226,39 @@ APPLE_TAILWIND_CSS = """
     .input-summary-section h3 {
         font-size: 1rem;
         font-weight: 600;
-        color: #AAAAAA;
+        color: #555555; /* Dark gray */
         margin-bottom: 0.5rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     .input-summary-section p {
         font-size: 1.1rem;
-        color: #E0E0E0;
+        color: #333333; /* Dark text */
         line-height: 1.6;
         white-space: pre-wrap;
         word-wrap: break-word;
         font-style: italic;
     }
+    
+    /* Main output section (white box) */
     .brand-output-section {
-        background-color: #1a1a1a;
+        background-color: #FFFFFF; /* White */
         border-radius: 12px;
         padding: 2rem 2.5rem;
         margin-top: 2rem;
-        border: 1px solid #2a2a2a;
+        border: 1px solid #E0E0E0; /* Light border */
     }
     .brand-output-section h2 {
         font-size: 1.5rem;
         font-weight: 600;
-        color: #FFFFFF;
-        border-bottom: 1px solid #333;
+        color: #0A2351; /* Dark Blue */
+        border-bottom: 1px solid #E0E0E0; /* Light border */
         padding-bottom: 0.5rem;
         margin-bottom: 1.5rem;
     }
     .brand-output-section p {
         font-size: 1rem;
-        color: #E0E0E0;
+        color: #333333; /* Dark text */
         line-height: 1.6;
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -241,10 +266,10 @@ APPLE_TAILWIND_CSS = """
     .brand-output-section pre {
         white-space: pre-wrap;
         word-wrap: break-word;
-        background-color: #080808;
+        background-color: #F8F8F8; /* Light gray */
         padding: 1.5rem;
         border-radius: 8px;
-        color: #E0E0E0;
+        color: #333333; /* Dark text */
         font-family: 'Menlo', 'Consolas', monospace;
         font-size: 0.95rem;
         line-height: 1.7;
@@ -252,16 +277,16 @@ APPLE_TAILWIND_CSS = """
     .brand-output-section h3 {
         font-size: 1.25rem;
         font-weight: 600;
-        color: #FFFFFF;
+        color: #333333; /* Dark text */
         margin-top: 2rem;
         margin-bottom: 0.5rem;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid #E0E0E0; /* Light border */
         padding-bottom: 0.5rem;
     }
     .brand-output-section h4 {
         font-size: 1.1rem;
         font-weight: 600;
-        color: #E0E0E0;
+        color: #444444; /* Dark gray */
         margin-top: 1.5rem;
         margin-bottom: 0.5rem;
     }
@@ -269,7 +294,7 @@ APPLE_TAILWIND_CSS = """
         list-style-type: disc;
         margin-left: 20px;
         padding-left: 0;
-        color: #E0E0E0;
+        color: #333333; /* Dark text */
     }
     .brand-output-section li {
         margin-bottom: 0.5rem;
@@ -277,6 +302,8 @@ APPLE_TAILWIND_CSS = """
         overflow-wrap: break-word;
         word-wrap: break-word;
     }
+    
+    /* Table styles */
     .brand-output-section table {
         display: block;
         width: 100%;
@@ -284,26 +311,26 @@ APPLE_TAILWIND_CSS = """
         border-collapse: collapse;
         margin-top: 1rem;
         margin-bottom: 1rem;
-        border: 1px solid #333;
+        border: 1px solid #E0E0E0; /* Light border */
         border-radius: 8px;
         table-layout: fixed;
     }
     .brand-output-section th,
     .brand-output-section td {
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid #E0E0E0;
         padding: 0.75rem 1rem;
-        color: #E0E0E0;
+        color: #333333; /* Dark text */
         white-space: normal !important;
         overflow-wrap: anywhere;
         vertical-align: top;
-        border-left: 1px solid #333;
+        border-left: 1px solid #E0E0E0;
     }
     .brand-output-section th:first-child,
     .brand-output-section td:first-child {
         min-width: 180px;
     }
     .brand-output-section th {
-        background-color: #2a2a2a;
+        background-color: #F8F8F8; /* Light gray header */
         font-weight: 600;
         text-align: left;
     }
@@ -318,12 +345,23 @@ APPLE_TAILWIND_CSS = """
         padding-bottom: 8px;
     }
     .table-scroll::-webkit-scrollbar { height: 8px; }
-    .table-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-    .table-scroll::-webkit-scrollbar-track { background: #1a1a1a; }
+    .table-scroll::-webkit-scrollbar-thumb { background: #CCCCCC; border-radius: 4px; } /* Light gray thumb */
+    .table-scroll::-webkit-scrollbar-track { background: #F8F8F8; } /* Light gray track */
 
+    /* Hide Streamlit extras */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+</style>
+"""
+
+# Fix label color CSS (the original was missing '#')
+tabs_font_css = """
+<style>
+div[class*="stTextArea"] label {
+  font-size: 26px;
+  color: #0A2351;
+}
 </style>
 """
 
@@ -335,21 +373,21 @@ LOGO_BUTTON_STYLE = f"""
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
-        {"color: transparent !important;" if logo_base64 else ""}
         width: 100%;
-        height: 40px;
+        height: 56px; /* was 0px; now visible */
         border: none !important;
-        background-color: #2a2a2a !important;
         padding: 0 !important;
         white-space: nowrap;
+        font-size: 0; /* hide text label while keeping button height */
+        line-height: 0;
     }}
     .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:hover {{
-        background-color: #333333 !important;
-        opacity: 0.85;
+        opacity: 0.9;
         border: none !important;
+        background-color: transparent !important;
     }}
     .apple-nav-container [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:disabled {{
-        background-color: #2a2a2a !important;
+        background-color: transparent !important; /* match navbar */
         opacity: 1.0;
         border: none !important;
         cursor: default !important;
@@ -357,8 +395,9 @@ LOGO_BUTTON_STYLE = f"""
 </style>
 """
 
-st.set_page_config(layout="wide", page_title="Brand Generator App")
+st.set_page_config(layout="wide", page_title="StartWise App")
 st.markdown(APPLE_TAILWIND_CSS, unsafe_allow_html=True)
+st.markdown(tabs_font_css, unsafe_allow_html=True)
 st.markdown(LOGO_BUTTON_STYLE, unsafe_allow_html=True)
 
 # --- Gemini config (TEXT model only) ---------------------------------------
@@ -523,8 +562,10 @@ def navigate_to(page_key):
     st.session_state.current_page = page_key
 
 def create_main_navbar():
+    # Wrap nav in a styled container so CSS rules apply and to avoid stray closing </div>
     st.markdown('<div class="apple-nav-container">', unsafe_allow_html=True)
-    cols = st.columns([1, 2, 2, 2, 2, 2])
+
+    cols = st.columns([2, 2, 2, 2, 2, 2])
     page_keys = list(PAGE_NAMES.keys())
     page_vals = list(PAGE_NAMES.values())
 
@@ -614,15 +655,19 @@ def main_page():
     st.markdown('<p class="apple-hero-subtitle">Tell us what your brand stands for, and we’ll do the rest.</p>', unsafe_allow_html=True)
 
     with st.form(key="brand_form"):
-        idea = st.text_area("What idea do you have in mind?",
-                            placeholder="What is your product or service? What makes it unique? How will you sell it?",
-                            height=100)
-        launch_plan = st.text_area("What are your thoughts on a launch plan?",
-                                   placeholder="Where are you launching first? Who is your ideal customer? Any constraints?",
-                                   height=100)
+        idea = st.text_area(
+            "What idea do you have in mind?",
+            placeholder="What is your product or service? What makes it unique? How will you sell it?",
+            height=100,
+        )
+        launch_plan = st.text_area(
+            "What are your thoughts on a launch plan?",
+            placeholder="Where are you launching first? Who is your ideal customer? Any constraints?",
+            height=100,
+        )
 
         st.markdown('<div class="apple-primary-button-container" style="display: flex; justify-content: center;">', unsafe_allow_html=True)
-        submitted = st.form_submit_button("Generate Brand Identity", type="primary", disabled=not GEMINI_ENABLED)
+        submitted = st.form_submit_button("Let's Start!", type="primary", disabled=not GEMINI_ENABLED)
         st.markdown('</div>', unsafe_allow_html=True)
 
         if submitted:
@@ -690,9 +735,9 @@ def page_a():
             output_placeholder.error("There was an issue generating the segmentation output.")
     else:
         st.markdown('<h1 class="apple-page-title">Segment View</h1>', unsafe_allow_html=True)
-        st.markdown("## Define Your Identity.")
+        st.markdown("## Understand Your Market Segments.")
         st.markdown(
-            '<p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;"><i>To generate a brand identity, please return to the <b>Home</b> page and fill out the form.</i></p>',
+            '<p style="font-size: 1.1rem; color: #555555; margin-top: 2rem;"><i>Dive deep into detailed customer segments to tailor your offerings and maximize impact. To generate a market segments, please return to the <b>Home</b> page and fill out the form.</i></p>',
             unsafe_allow_html=True
         )
 
@@ -731,7 +776,7 @@ def page_b():
     else:
         st.markdown("## Analyze Your Competition.")
         st.markdown(
-            '<p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;"><i>To generate a competitive analysis, please return to the <b>Home</b> page and fill out the form.</i></p>',
+            '<p style="font-size: 1.1rem; color: #555555; margin-top: 2rem;"><i>To generate a competitive analysis, please return to the <b>Home</b> page and fill out the form.</i></p>',
             unsafe_allow_html=True
         )
 
@@ -760,43 +805,37 @@ def page_c():
         else:
             output_placeholder.warning("Could not find generated analysis. Please try submitting the form again from the Home page.")
     else:
-        st.markdown("## Define Your Positioning.")
+        st.markdown("## Track Competitors and Trends.")
         st.markdown(
-            '<p style="font-size: 1.1rem; color: #AAAAAA; margin-top: 2rem;"><i>To generate a positioning and targeting strategy, please return to the <b>Home</b> page and fill out the form.</i></p>',
+            '<p style="font-size: 1.1rem; color: #555555; margin-top: 2rem;"><i>Stay ahead with real-time insights on market dynamics, competitor moves, and emerging opportunities.</i></p>',
             unsafe_allow_html=True
         )
 
 def page_d():
     create_main_navbar()
     st.markdown('<h1 class="apple-page-title">Roadmap</h1>', unsafe_allow_html=True)
-    st.markdown("## Reimagined. Revolutionary.")
-    st.markdown("""
-        <p style="font-size: 1.1rem; color: #E0E0E0;">
-        Apple Watch X features an all-new design with a thinner case and a magnetic band attachment system.
-        It’s the essential tool for a healthy and active life.
+    st.markdown("## Plan Your Startup’s Journey.")
+    st.markdown(
+        """
+        <p style="font-size: 1.1rem; color: #333333;">
+        Create and visualize your strategic milestones to navigate growth with clarity and confidence.
         </p>
-        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0;">
-            <li>**S10 Chip:** Faster, more efficient processing.</li>
-            <li>**Blood Glucose Monitoring:** Non-invasive monitoring capability.</li>
-            <li>**New Health Sensors:** Advanced crash-detection.</li>
-        </ul>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 def page_e():
     create_main_navbar()
     st.markdown('<h1 class="apple-page-title">Pricing</h1>', unsafe_allow_html=True)
-    st.markdown("## Audio Purity. Redefined.")
-    st.markdown("""
-        <p style="font-size: 1.1rem; color: #E0E0E0;">
-        AirPods Max deliver unparalleled high-fidelity audio with industry-leading Active Noise Cancellation.
-        They've been updated with USB-C and extended battery life.
+    st.markdown("## Build Winning Pricing Models.")
+    st.markdown(
+        """
+        <p style=\"font-size: 1.1rem; color: #333333;\">
+        Design flexible pricing strategies that align with your value proposition and market demand.
         </p>
-        <ul style="color: #E0E0E0; list-style-type: disc; margin-left: 20px; padding-left: 0%;">
-            <li>**H3 Chip:** Advanced computational audio processing.</li>
-            <li>**Lossless Audio:** Support for high-resolution lossless audio.</li>
-            <li>**New Carrying Case:** Ultra-low power mode for extended standby.</li>
-        </ul>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 # --- Router ----------------------------------------------------------------
 
